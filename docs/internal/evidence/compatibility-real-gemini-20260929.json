@@ -1,0 +1,287 @@
+{
+  "schema": 1,
+  "testedAt": "2026-09-29T15:13:50.077195+00:00",
+  "version": "3.21.0.dev3",
+  "sourceHash": "7be9d6aff26af3395cf38f19d009d62956c4d8b1e0d2c17a36a04fd17cabdf55",
+  "projects": [
+    {
+      "path": "examples/mantle-voice-agent",
+      "sourceHash": "4aca20a2fdbf4b7e90732286d540599d35a5e113b0cfacdcf7b6a5a0156e618b",
+      "checks": [
+        "locked-install",
+        "installed-version",
+        "mantle-import",
+        "project-validation",
+        "licensed-training"
+      ],
+      "liveConversations": "not tested"
+    },
+    {
+      "path": "examples/mantle-voice-appointment-skills",
+      "sourceHash": "0afda323efd6db158e52c58c499a6139882acf42e5fa4a93a24ef9a7eca47f4e",
+      "checks": [
+        "locked-install",
+        "installed-version",
+        "mantle-import",
+        "project-validation",
+        "licensed-training"
+      ],
+      "liveConversations": "not tested"
+    },
+    {
+      "path": "examples/mantle-voice-banking-skills",
+      "sourceHash": "ec88cddcc2f2af05ab18ed418c7fa59315e60ab5bb3f2a8ea6c18b2a5ba1f878",
+      "checks": [
+        "locked-install",
+        "installed-version",
+        "mantle-import",
+        "project-validation",
+        "licensed-training"
+      ],
+      "liveConversations": "not tested"
+    },
+    {
+      "path": "examples/mantle-voice-car-purchase-skills",
+      "sourceHash": "bdcbd934ac38f9cb580f4c4470eb1d8177b783e0e26c8de20a503e570ac05488",
+      "checks": [
+        "locked-install",
+        "installed-version",
+        "mantle-import",
+        "project-validation",
+        "licensed-training"
+      ],
+      "liveConversations": "not tested"
+    },
+    {
+      "path": "examples/mantle-voice-insurance-skills",
+      "sourceHash": "4fc7587266d04cbba9fb0acbdc3c45ea2a2c9e22677ed9829569ff05ef4a33be",
+      "checks": [
+        "locked-install",
+        "installed-version",
+        "mantle-import",
+        "project-validation",
+        "licensed-training"
+      ],
+      "liveConversations": "not tested"
+    },
+    {
+      "path": "examples/mantle-voice-rime-skills",
+      "sourceHash": "e44254cf52cfaf118d6131031720482e8d190ed14d83bebd1602b6d8cac3036e",
+      "checks": [
+        "locked-install",
+        "installed-version",
+        "mantle-import",
+        "project-validation",
+        "licensed-training"
+      ],
+      "liveConversations": "not tested"
+    },
+    {
+      "path": "examples/mantle-voice-routed-skills",
+      "sourceHash": "1ec091aa1e3ad1f11554063a8b2c7bd1ec0db862ba5c0568ff9d9f85a5a8b9d0",
+      "checks": [
+        "locked-install",
+        "installed-version",
+        "mantle-import",
+        "project-validation",
+        "licensed-training"
+      ],
+      "liveConversations": "not tested"
+    },
+    {
+      "path": "examples/mantle-voice-speechmatics-skills",
+      "sourceHash": "d90b688aaf300313244475a586f8cbc72a55456bee62bcddee5f6f92252ea1c4",
+      "checks": [
+        "locked-install",
+        "installed-version",
+        "mantle-import",
+        "project-validation",
+        "licensed-training"
+      ],
+      "liveConversations": "not tested"
+    },
+    {
+      "path": "examples/mantle-voice-telco-skills",
+      "sourceHash": "162e9c3f2b9d01018ef4cff43ec1699cfaa1f909ea199873cbbd06bd07dec787",
+      "checks": [
+        "locked-install",
+        "installed-version",
+        "mantle-import",
+        "project-validation",
+        "licensed-training",
+        "project-unittests"
+      ],
+      "liveConversations": "not tested"
+    },
+    {
+      "path": "tutorials/rasa-ai-team-casebook",
+      "sourceHash": "67b93200aabb3f800d917ebdbd66a75e68a70d650f3d9b25842250f086d584be",
+      "checks": [
+        "locked-install",
+        "installed-version",
+        "mantle-import",
+        "project-validation",
+        "licensed-training",
+        "project-unittests",
+        "62-scenario-oracles",
+        "186-mutations-killed",
+        "62-sdk-tool-dispatches"
+      ],
+      "liveConversations": "not tested"
+    },
+    {
+      "path": "tutorials/rasa-card-reissue-tutorial",
+      "sourceHash": "3b3e3448ef08c00eaed0edbe82cf50d4d5c378a1413a9d515425c96292eb489c",
+      "checks": [
+        "locked-install",
+        "installed-version",
+        "mantle-import",
+        "project-validation",
+        "licensed-training"
+      ],
+      "liveConversations": "not tested"
+    },
+    {
+      "path": "tutorials/rasa-document-artifact-tutorial",
+      "sourceHash": "5c2380a328ded30d7a9497c61e75e16dd4799077aeee04e66281b224232add25",
+      "checks": [
+        "locked-install",
+        "installed-version",
+        "mantle-import",
+        "project-validation",
+        "licensed-training",
+        "project-unittests"
+      ],
+      "liveConversations": "not tested"
+    },
+    {
+      "path": "tutorials/rasa-hubspot-crm-tutorial",
+      "sourceHash": "b2036938c9c7c19c791d84849da379a34d0b15eb50b4a87d13a40d8553c79f6f",
+      "checks": [
+        "locked-install",
+        "installed-version",
+        "mantle-import",
+        "project-validation",
+        "licensed-training",
+        "mock-mcp-transport-proof"
+      ],
+      "liveConversations": "not tested"
+    },
+    {
+      "path": "tutorials/rasa-langgraph-comparison-tutorial",
+      "sourceHash": "b90bbb2bc1b3c7eb3a0e32ee385836da1add9a68afaf3d2176f4b6a42e80c7ae",
+      "checks": [
+        "locked-install",
+        "installed-version",
+        "mantle-import",
+        "project-validation",
+        "licensed-training"
+      ],
+      "liveConversations": "not tested"
+    },
+    {
+      "path": "tutorials/rasa-tools-and-memory-tutorial",
+      "sourceHash": "972aa90dc9b0fded4b090fa6deeaed27d9965909bd7722590b1c556415efcf79",
+      "checks": [
+        "locked-install",
+        "installed-version",
+        "mantle-import",
+        "project-validation",
+        "licensed-training"
+      ],
+      "liveConversations": "not tested"
+    },
+    {
+      "path": "tutorials/rasa-voice-agent-tutorial",
+      "sourceHash": "b2858b04ea408ed842e184ec1a499cf09c0e498a239c4c2c2070e1f976475c73",
+      "checks": [
+        "locked-install",
+        "installed-version",
+        "mantle-import",
+        "project-validation",
+        "licensed-training"
+      ],
+      "liveConversations": "not tested"
+    },
+    {
+      "path": "patterns/evaluation-harness",
+      "sourceHash": "e1ba414095ead3a9530e636c0c2682ecb9010b0bf4008b11ed5912b7ec9e9061",
+      "checks": [
+        "locked-install",
+        "installed-version",
+        "mantle-import",
+        "project-validation",
+        "licensed-training"
+      ],
+      "liveConversations": "not tested"
+    },
+    {
+      "path": "patterns/session-start-personalization",
+      "sourceHash": "7213a3c3ba8c4ada4fc4d44ffb6a619835aa1a59fb2986ca960e5baa1a50456b",
+      "checks": [
+        "locked-install",
+        "installed-version",
+        "mantle-import",
+        "project-validation",
+        "licensed-training"
+      ],
+      "liveConversations": "not tested"
+    },
+    {
+      "path": "patterns/voice-auth-stepup",
+      "sourceHash": "906e131f5bebfaead24a4ee3d4281d8c0e229fd0f755d5df52df2dcae2ce0d84",
+      "checks": [
+        "locked-install",
+        "installed-version",
+        "mantle-import",
+        "project-validation",
+        "licensed-training",
+        "project-unittests"
+      ],
+      "liveConversations": "not tested"
+    },
+    {
+      "path": "patterns/voice-handoff-context",
+      "sourceHash": "8c0dcd20087a3c7646499a37dbc750b6bc86fb973f5863f524959cd25a26ed6d",
+      "checks": [
+        "locked-install",
+        "installed-version",
+        "mantle-import",
+        "project-validation",
+        "licensed-training",
+        "project-unittests"
+      ],
+      "liveConversations": "not tested"
+    },
+    {
+      "path": "patterns/voice-vendor-router",
+      "sourceHash": "442106a2952d1cc6857d4e67c5b1370b67ffd1dba38efa0bcd10f9cd2ca5fbe5",
+      "checks": [
+        "locked-install",
+        "installed-version",
+        "mantle-import",
+        "project-validation",
+        "licensed-training",
+        "project-unittests"
+      ],
+      "liveConversations": "not tested"
+    },
+    {
+      "path": "community/samrudh-gemini-voice-agent",
+      "sourceHash": "1b31d6cbf705df48c0db849568f3e7bd3a07532e9d1276e1e8c87b392b92e6ea",
+      "checks": [
+        "locked-install",
+        "installed-version",
+        "mantle-import",
+        "project-validation",
+        "licensed-training"
+      ],
+      "liveConversations": "not tested"
+    }
+  ],
+  "starterPack": [
+    "scaffold-sdk-validation",
+    "lint-negative-controls"
+  ],
+  "liveConversations": "not tested; separate website quickstart live acceptance covers four synthetic text cases only"
+}
