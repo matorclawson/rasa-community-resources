@@ -12,4 +12,3 @@ def inspect_network(area: str, question: str) -> dict:
     if area not in OBSERVATIONS:
         return {"status": "unknown_area"}
     return dict(OBSERVATIONS[area])
-
