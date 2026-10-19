@@ -372,17 +372,20 @@ class WorkerClientTests(unittest.TestCase):
                 launch.assert_not_called()
 
     def test_bind_race_after_reservation_with_far_deadline(self):
-        worker=self.client();view=TurnView(json.loads);newest=[]
+        worker=self.client();view=TurnView(json.loads);newest=[];remaining=[]
         begin=worker._begin
         def supersede_after_reservation(budget):
             invocation=begin(budget)
-            self.assertGreater(budget.deadline-time.monotonic(),5)
+            remaining.append(budget.deadline-time.monotonic())
             newest.append(view.begin('other','newer-turn'))
             return invocation
         with patch.object(worker,'_begin',side_effect=supersede_after_reservation), \
              patch.object(worker,'_read',wraps=worker._read) as read:
             self.assertEqual(asyncio.run(worker.show(view)),{'status':'unavailable'})
         read.assert_not_called()
+        self.assertEqual(len(remaining),1)
+        self.assertGreater(remaining[0],5)
+        self.assertEqual(len(newest),1)
         self.assertTrue(view.is_current(newest[0]))
         self.assertEqual(view.html,'')
         self.assertEqual((self.root/'requests').read_text().splitlines(),['begin'])
