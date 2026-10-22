@@ -129,7 +129,7 @@ Open http://127.0.0.1:8943/ . It is read-only. Inspect task, file actions, diff 
 
 **Checkpoint:** the exact exported files match your chosen limit and protected decision. Keep the task and evidence together. This exercise builds a small Python card component; it does not create or restart the voice agent.
 
-## Networking break (15 minutes)
+## Networking break (15 minutes, 16:05–16:20 London)
 
 Meet a different group. Ask what their agent got wrong or what their tests would miss. Bring one new failure case back to your table. Rotate roles.
 
@@ -171,7 +171,7 @@ python show_card.py --offline
 
 Open `card.html`. Expected: three currencies and an explicit sample-data label. `set_limit.py` generates a scripted attempt for this chapter. Do not claim it is your earlier live-generated artifact. To carry that exact artifact, follow chapter 5's transfer instructions and require compatible protected-suite fingerprints.
 
-Repeat integration. Expected: refusal because the base changed. Explain why a attempt tested against yesterday's product cannot simply replace today's product.
+Repeat integration. Expected: refusal because the base changed. Explain why an attempt tested against yesterday's product cannot simply replace today's product.
 
 For the complete target architecture, read `BUILD-CONTRACT.md` and identify which steps your group has evidence for. Finish `group-handoff.md` with the fields below.
 
