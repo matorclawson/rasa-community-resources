@@ -24,6 +24,14 @@ replayed or delayed data said to be so, missing input asked for, no stale value 
 
 ## Run it (no license, no key, no network)
 
+Before using `../factory/.venv/bin/python`, create that historical environment from its frozen lock. From this folder, with Python 3.12 and uv installed:
+
+```bash
+uv sync --frozen --python 3.12 --project ../factory
+```
+
+This setup downloads the pinned packages and needs the internet. The offline commands below use the environment it creates; they do not upgrade these historical fixtures.
+
 From this folder, with the pack's pinned interpreter:
 
 ```bash

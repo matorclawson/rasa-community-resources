@@ -19,6 +19,14 @@ A Mantle skill imports `mcp/reviewer:ask_reviewer`. The server behind it (`serve
 
 ## Run it (no license, no key, no network beyond loopback)
 
+Before using `../factory/.venv/bin/python`, create that historical environment from its frozen lock. From this folder, with Python 3.12 and uv installed:
+
+```bash
+uv sync --frozen --python 3.12 --project ../factory
+```
+
+This setup downloads the pinned packages and needs the internet. The offline commands below use the environment it creates; they do not upgrade these historical fixtures.
+
 Use the pack's pinned environment (`factory/uv.lock`: `rasa-pro` 3.21.0.dev5, `mcp` 1.28.1, `openai-agents` 0.13.6). From this folder, use the pack's own interpreter `../factory/.venv/bin/python` (this folder has no `pyproject`, so a bare `python` can miss the Mantle packages):
 
 ```bash

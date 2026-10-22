@@ -25,15 +25,15 @@ The position, forecast and rates were recorded on **22 October 2026**, so every 
 
 ## Get the code
 
-1. Clone the repository if needed:
+1. Unzip the supplied workshop package and open a terminal in its `software-factories-masterclass` folder. Initialize local Git metadata there so the demo can check that `.env` stays ignored:
 
    ```bash
-   git clone https://github.com/RasaHQ/rasa-community-resources.git
+   git init
    ```
 
-   For the supplied ZIP, run `git init` at the package root and set PACK to that folder. You do not need a remote repository.
+   No GitHub account, remote repository or commit is needed. Follow [the prework](../PREWORK.md) if you need setup help.
 
-2. Set your clone's actual location and install the supplied code:
+2. Set `PACK` to that package folder's actual location and install the supplied code:
 
    ```bash
    export PACK=/absolute/path/to/software-factories-masterclass
@@ -128,7 +128,7 @@ Live positions, forecasts, computed estimates and daily rates carry different la
 - **License missing or refused:** use the issued license, not the sign-up confirmation. Do not share its value in a support report.
 - **The check still says NOT DONE:** read the four cards. Each must say REPLAY, and the timeline must show your requested 30 or 120 minutes. Make the request in the conversation.
 - **A port is occupied:** stop your own earlier run with `make stop`. The launcher doesn't stop anyone else's.
-- **`.env` refused:** move it out of your clone, run `make env` to create a fresh one, put each key on its own line, and run `chmod 600 .env`. Never commit it.
+- **`.env` refused:** move it outside the package folder, run `make env` to create a fresh one, put each key on its own line, and run `chmod 600 .env`. Never commit it.
 - **A live source is unavailable:** return to the recorded exercise rather than calling an unavailable card complete.
 - **You need help:** share the error sentence, your Python version and the command you ran. Never share your `.env` or your keys.
 
