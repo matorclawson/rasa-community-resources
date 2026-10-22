@@ -556,7 +556,7 @@ class ScriptedClient:
                 if message.get('role') == 'tool' and (tool_record(message.get('content')) or {}).get('discovery_id') == discovery['discovery_id']), default=-1)
             declined = any(message.get('role') == 'user' and unknown_flight(str(message.get('content', '')))
                            for message in messages[offered_at + 1:latest]) if offered_at >= 0 else False
-            if text.strip().lower().rstrip('.!?') in ('yes', 'that one', 'yes that one') and not declined:
+            if text.strip().lower().replace(',', '').rstrip('.!?') in ('yes', 'that one', 'yes that one') and not declined:
                 from briefing.traveller import discovery_notice, suggested_flight
                 try:
                     discovery_notice(discovery)  # Same validated notice as the presentation hook.
