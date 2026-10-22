@@ -18,6 +18,7 @@ if (hash(original) !== '6daf5f3796a1c1945c1a35170abfdc619296e9b35e5f35607b1e1bfc
 if (source === path.join(output, 'index.html')) throw Error('Output must be a separate review directory');
 const controller = await fs.readFile(path.join(here, 'reveal-navigation.js'), 'utf8');
 const css = await fs.readFile(path.join(here, 'style.css'), 'utf8');
+const breakIllustration = await fs.readFile(path.join(here, 'art', '29.svg'), 'utf8');
 const require = createRequire(import.meta.url);
 const { chromium } = require(option('--playwright', 'playwright-core'));
 const browser = await chromium.launch({ headless: true });
@@ -25,7 +26,7 @@ try {
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, reducedMotion: 'reduce' });
   await page.goto(pathToFileURL(source).href);
   await page.evaluate(async () => { await document.fonts.ready; });
-  const exported = await page.evaluate(({ controller, css }) => {
+  const exported = await page.evaluate(({ controller, css, breakIllustration }) => {
     const ns = 'http://www.w3.org/2000/svg';
     const slides = [...document.querySelectorAll('.slide')];
     if (slides.length !== 30) throw Error('Expected 30 slides');
@@ -85,7 +86,14 @@ try {
       // Temporarily expose the source so computed styles and screen transforms
       // are real for every slide. Do not run another writer's generator.
       slide.classList.add('on');
-      const svg = slide.querySelector('svg.pic');
+      let svg = slide.querySelector('svg.pic');
+      // The break illustration is authored directly at 1000x400. Keep it
+      // independent of the older primitive scene and retain its aspect ratio.
+      if (index === 28) {
+        const replacement = new DOMParser().parseFromString(breakIllustration, 'image/svg+xml').documentElement;
+        svg.replaceWith(document.importNode(replacement, true));
+        svg = slide.querySelector('svg.pic');
+      }
       const inverse = svg.getScreenCTM().inverse();
       const clone = svg.cloneNode(true);
       const originals = [svg, ...svg.querySelectorAll('*')];
@@ -106,7 +114,7 @@ try {
       const children = [...svg.children];
       const clonedChildren = [...clone.children];
       const wrapper = document.createElementNS(ns, 'g');
-      wrapper.setAttribute('transform', 'translate(0 3.5714285714) scale(0.5952380952)');
+      wrapper.setAttribute('transform', index === 28 ? 'translate(0 0)' : 'translate(0 3.5714285714) scale(0.5952380952)');
       const steps = [];
       children.forEach((el, childIndex) => {
         const cloned = clonedChildren[childIndex];
@@ -155,7 +163,7 @@ try {
     // The gate loads this serialized candidate into a fresh browser context.
     slides[0].classList.add('on');
     return { pictures: result, copyPreserved: true, partPositions: true, html: '<!doctype html>\n' + document.documentElement.outerHTML };
-  }, { controller, css });
+  }, { controller, css, breakIllustration });
   await fs.mkdir(path.join(output, 'art'), { recursive: true });
   for (const picture of exported.pictures) await fs.writeFile(path.join(output, 'art', picture.name), picture.svg + '\n');
   await fs.writeFile(path.join(output, 'index.html'), exported.html);
