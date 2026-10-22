@@ -59,6 +59,15 @@ try {
     await page.keyboard.press('Home');
     for (let index = 0; index < count; index++) {
       if (index) await page.keyboard.press('ArrowRight');
+      // A teaching diagram may reveal several stages before ArrowRight moves
+      // to the next slide. Exercise those stages through the real controls,
+      // then measure the fully revealed composition, not the previous slide.
+      const revealSteps = await page.evaluate(() => {
+        const slide = [...document.querySelectorAll('.slide')].find(s => getComputedStyle(s).display !== 'none');
+        return Math.max(0, ...[...(slide?.querySelectorAll('.step[data-s]') || [])].map(s => Number(s.dataset.s) || 0));
+      });
+      if (revealSteps > 40) throw Error(`Unbounded reveal sequence: ${revealSteps}`);
+      for (let step = 0; step < revealSteps; step++) await page.keyboard.press('ArrowRight');
       await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
       const metrics = await page.evaluate(({ width, height }) => {
         const visible = el => {
@@ -150,7 +159,7 @@ try {
       const filename = `slide-${String(index + 1).padStart(2, '0')}-${width}x${height}.png`;
       await page.screenshot({ path: path.join(output, filename), animations: 'disabled' });
       const screenshot = await fs.readFile(path.join(output, filename));
-      report.slides.push({ index: index + 1, width, height, ...metrics, screenshot: filename, screenshotSha256: sha256(screenshot) });
+      report.slides.push({ index: index + 1, width, height, revealSteps, ...metrics, screenshot: filename, screenshotSha256: sha256(screenshot) });
     }
     report.failures.push(...errors.map(e => `${width}: ${e}`));
     await page.close();

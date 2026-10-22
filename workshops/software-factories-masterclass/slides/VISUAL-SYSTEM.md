@@ -68,3 +68,29 @@ overflow, visual-area, word-count, overlap, list, fixed-chrome and navigation
 fixtures. It passes only when the gate rejects the expected defect at both
 resolutions. These fixtures prove detection behavior, not the teaching quality
 of the finished deck.
+
+## Receiving the first 30-slide revision
+
+`repair-v4-geometry.mjs` is a narrowly pinned bridge for the content owner's
+first 30-slide preview (SHA-256 `658b68a130a06b5ad46c3d0eb596ff82dc72206ad04d3e3117dc5b978c3e5b52`).
+It refuses other source bytes before launching a browser, writes to a separate
+directory, and verifies that normalized title, body and diagram text is
+unchanged across all 30 slides. It produces nine SVG drop-ins for the owner's
+`pics/NN.svg` generation hook, a small margin override and a complete review
+HTML file. The geometry changes separate labels and subtitles and wrap slide
+7's overlong subtitle around its icon. No smaller font is used.
+
+```sh
+node workshops/software-factories-masterclass/slides/repair-v4-geometry.mjs \
+  --playwright /path/to/installed/playwright-core \
+  --deck /path/to/exact-v4-preview.html \
+  --out /path/to/separate-geometry-review
+```
+
+The receiver integrates the drop-ins and margin rule into the same deck,
+regenerates it, and runs `check-layout.mjs` again before any preview update.
+The gate advances through the real keyboard reveal controls before measuring
+each fully revealed slide, and checks that the expected slide actually showed.
+The bridge does **not** resolve the remaining word-count failures: diagram
+labels and body copy share the 12-word budget. Rasa-ops retains that content
+decision and the final story; a geometry-only pass is not a finished deck pass.
