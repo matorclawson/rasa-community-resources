@@ -41,7 +41,7 @@ else
 fi
 ```
 
-If the folder exists, choose a new `WORK` name and repeat the block. Earlier evidence stays intact. There is no package installation command: this checkpoint has no third-party dependencies. Use Python 3.12; other versions return NOT_READY when the verifier checks the environment.
+If the folder exists, choose a new `WORK` name and repeat the block. Earlier evidence stays intact. There is no package installation command: this exercise has no third-party dependencies. Use Python 3.12; other versions return NOT_READY when the verifier checks the environment.
 
 ## See how it works
 

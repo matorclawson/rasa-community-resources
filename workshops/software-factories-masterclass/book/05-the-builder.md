@@ -10,7 +10,7 @@ If you get stuck, use [the ready folder](ready/ch05) and follow **Get the ready 
 
 A **builder** proposes changed files. A **tool** is a function it may ask to run: here, list files, read a file or write a file. A **scratch copy** is a disposable copy of the product. The original product stays untouched. An **attempt** holds the proposed files.
 
-The OpenAI Agents API runs a model session and its tool requests. **Core** is the Python package that connects the factory to that service. For this exercise, a **scripted stream** sends prepared file actions through the same connection.
+The OpenAI Agents API runs a model session and its tool requests. **zeocore** is the Python package that connects the factory to that service. For this exercise, a **scripted stream** sends prepared file actions through the same connection.
 
 ```mermaid
 flowchart LR
