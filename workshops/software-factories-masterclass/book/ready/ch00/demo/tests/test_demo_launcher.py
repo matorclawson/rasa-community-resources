@@ -286,7 +286,7 @@ class ScriptedRouting(unittest.IsolatedAsyncioTestCase):
         notice = discovery_notice(search)
         self.assertIn('My suggestion is United Airlines 57', notice)
         self.assertIn('soonest', notice)
-        for answer in ('yes', 'that one', 'yes that one', 'yes, that one'):
+        for answer in ('yes', 'that one', 'yes that one', 'yes, that one', 'Yes, that one'):
             response = await self.call([{'role': 'tool', 'content': json.dumps(search)},
                 {'role': 'assistant', 'content': notice}, {'role': 'user', 'content': answer}], ['briefing', 'find_flights'])
             self.assertEqual(response.tool_calls[0].tool_args,
