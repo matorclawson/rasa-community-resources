@@ -10,7 +10,8 @@ The deck directory needs no module loader,
 package install, external font host or network connection.
 
 The Architect's binding 04:31 partition makes `style.css` and `art/` the
-canonical LOOK paths; it supersedes the earlier `pics/` receiving hook.
+canonical LOOK paths; it is the artwork source of record. A byte-identical `pics/` compatibility copy
+can feed the current content builder without changing artwork ownership.
 Rasa-ops owns `index.html`, including which art each slide consumes. This
 contribution never writes the content owner's working index or generator.
 
@@ -113,8 +114,8 @@ adapt the larger composition without distorting its aspect ratio; their
 smallest effective type is above 17 viewBox units.
 
 These pictures preserve the complete title/body/diagram wording of PR131
-`c268eccc`. Twenty-five teaching diagrams build in stages. Five orientation or
-recap pictures stay complete. Structural panels remain visible as context;
+`ce0b5d45`. Twenty-three teaching diagrams build in stages. Seven orientation or
+recap pictures (1, 2, 4, 7, 11, 29 and 30) stay complete. Structural panels remain visible as context;
 icons, labels and connectors reveal in their teaching order. Hidden tests
 appear before the builder works, and terminal commands appear in order.
 
@@ -126,9 +127,9 @@ previous slide. Home and End show the cover and complete closing slide.
 Without this controller the SVG content remains fully visible.
 
 `export-slide-pictures.mjs` reproduces the pictures and a separate integrated
-review HTML from the exact c268 input. It refuses a different revision rather
+review HTML from the exact ce0b5d45 input. It refuses a different revision rather
 than silently replacing the content owner's newer words. That candidate also
-retains the within-part breadcrumb counter. The content owner receives the
+retains the existing within-part breadcrumb counter without appending another. The content owner receives the
 SVGs, controller and CSS and publishes through the same PR131. The candidate
 links `style.css` as a local asset, and its gate records the stylesheet's exact
 bytes and hash before rendering and verifies they did not change afterwards.

@@ -14,7 +14,7 @@ const source = path.resolve(option('--deck', 'index.html'));
 const output = path.resolve(option('--out', 'staged-pictures-review'));
 const original = await fs.readFile(source);
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
-if (hash(original) !== '20eabce9d3c82617a9bfbb4f2b4c81f620a0a814af895c8df21a3a28489ffec5') throw Error('Different deck revision: rebind current content before exporting');
+if (hash(original) !== '6daf5f3796a1c1945c1a35170abfdc619296e9b35e5f35607b1e1bfc1c2116dd') throw Error('Different deck revision: rebind current content before exporting');
 if (source === path.join(output, 'index.html')) throw Error('Output must be a separate review directory');
 const controller = await fs.readFile(path.join(here, 'reveal-navigation.js'), 'utf8');
 const css = await fs.readFile(path.join(here, 'style.css'), 'utf8');
@@ -34,6 +34,14 @@ try {
       body: normalized(s.querySelector('.words')?.textContent || ''), diagram: normalized(s.querySelector('svg.pic').textContent) }));
     const before = copy();
     const stageFor = (slide, el, index, x, y, r) => {
+      // Bind stages to the ce0b5d4 story, not the obsolete c268 slide numbers.
+      // Orientation and compact recap illustrations remain complete at entry.
+      if ([1, 2, 4, 7, 11, 29, 30].includes(slide)) return 0;
+      const compositions = { 3: 2, 5: 5, 6: 6, 8: 8, 9: 10, 10: 11,
+        12: 13, 13: 14, 14: 15, 15: 16, 16: 17, 17: 18, 18: 19,
+        19: 20, 20: 21, 21: 14, 22: 24, 23: 25, 24: 23,
+        25: 27, 26: 28, 27: 14, 28: 29 };
+      slide = compositions[slide];
       // Structural panels stay visible while their contents build up.
       if (slide !== 9 && el.tagName === 'rect' && r.width >= 200 && r.height >= 100) return 0;
       if ([1, 4, 7, 26, 30].includes(slide)) return 0;
@@ -130,16 +138,9 @@ try {
       slide.classList.remove('on');
     }
     if (JSON.stringify(before) !== JSON.stringify(copy())) throw Error('Teaching copy changed');
-    const totals = {}, seen = {};
-    slides.forEach(slide => {
-      const label = slide.querySelector('.crumb span'); const part = label.textContent.match(/^Part ([1-8]) of 8/)[1];
-      totals[part] = (totals[part] || 0) + 1;
-    });
-    slides.forEach(slide => {
-      const label = slide.querySelector('.crumb span'); const part = label.textContent.match(/^Part ([1-8]) of 8/)[1];
-      const position = seen[part] = (seen[part] || 0) + 1;
-      label.textContent += ` · Slide ${position} of ${totals[part]}`;
-    });
+    // The owner already supplies the approved within-part position. Preserve it.
+    if (slides.some(slide => !/· \d+ of \d+$/.test(slide.querySelector('.crumb span').textContent)))
+      throw Error('Current source lacks within-part positions');
     // Keep the licensed font faces embedded; bind the canonical LOOK file as
     // a local offline stylesheet. SVG artwork is inlined by the owner's
     // generator so reveal groups remain in the page DOM.
@@ -162,7 +163,7 @@ try {
   await fs.copyFile(path.join(here, 'FONT-LICENSES.txt'), path.join(output, 'FONT-LICENSES.txt'));
   await fs.copyFile(path.join(here, 'reveal-navigation.js'), path.join(output, 'reveal-navigation.js'));
   await fs.writeFile(path.join(output, 'receipt.json'), JSON.stringify({ sow: 'software-factories-masterclass-SOW-02',
-    parentHead: 'c268eccc202fa892ee222833f9fdb8add57d2c6f', parentHtmlSha256: hash(original), candidateHtmlSha256: hash(exported.html),
+    parentHead: 'ce0b5d450766f219dff0365f8a66006489fd6868', parentHtmlSha256: hash(original), candidateHtmlSha256: hash(exported.html),
     copyPreserved: exported.copyPreserved, partPositions: exported.partPositions,
     pictures: exported.pictures.map(({ svg, ...picture }) => ({ ...picture, sha256: hash(svg + '\n'), bytes: Buffer.byteLength(svg + '\n') })),
     status: 'REVIEW_CANDIDATE_REQUIRES_CONTENT_OWNER_INTEGRATION_AND_EXACT_SUCCESSOR_GATE' }, null, 2) + '\n');
