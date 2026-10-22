@@ -2,11 +2,17 @@
 
 sow: software-factories-masterclass-SOW-02
 
-The designer supplies `visual-system.css`, `visual-diagrams.mjs` and
+The designer supplies `style.css`, `art/`, `visual-diagrams.mjs` and
 `check-layout.mjs`. Rasa-ops owns the slide story and text in the single
-offline `index.html`. These source helpers are build-time tools: inline the
-CSS and generated SVGs into that file. The final deck needs no module loader,
+offline `index.html`. Link the local `style.css` and inline the generated SVGs
+from `art/` during generation so the reveal groups stay in the page DOM.
+The deck directory needs no module loader,
 package install, external font host or network connection.
+
+The Architect's binding 04:31 partition makes `style.css` and `art/` the
+canonical LOOK paths; it supersedes the earlier `pics/` receiving hook.
+Rasa-ops owns `index.html`, including which art each slide consumes. This
+contribution never writes the content owner's working index or generator.
 
 The composition is a local adaptation of Rasa brand tokens v0.2.0, read from
 `RasaHQ/brand` at the supplied checkout. Cream and ink carry the composition;
@@ -69,7 +75,7 @@ fixtures. It passes only when the gate rejects the expected defect at both
 resolutions. These fixtures prove detection behavior, not the teaching quality
 of the finished deck.
 
-## Receiving the first 30-slide revision
+## Historical first 30-slide geometry bridge
 
 `repair-v4-geometry.mjs` is a narrowly pinned bridge for the content owner's
 first 30-slide preview (SHA-256 `658b68a130a06b5ad46c3d0eb596ff82dc72206ad04d3e3117dc5b978c3e5b52`).
@@ -87,8 +93,10 @@ node workshops/software-factories-masterclass/slides/repair-v4-geometry.mjs \
   --out /path/to/separate-geometry-review
 ```
 
-The receiver integrates the drop-ins and margin rule into the same deck,
-regenerates it, and runs `check-layout.mjs` again before any preview update.
+That older bridge is retained for its exact failed source only. Current c268
+content has superseded it. The receiver integrated the geometry and wording
+changes into the same deck. New work uses the canonical paths above and runs
+`check-layout.mjs` on the regenerated deck before any preview update.
 The gate advances through the real keyboard reveal controls before measuring
 each fully revealed slide, and checks that the expected slide actually showed.
 The bridge does **not** resolve the remaining word-count failures: diagram
@@ -97,8 +105,8 @@ decision and the final story; a geometry-only pass is not a finished deck pass.
 
 ## Thirty SVGs and teaching reveals
 
-The content-owner partition is implemented by `pics/01.svg` through
-`pics/30.svg`. Each uses `viewBox="0 0 1000 400"`, resolves its colours and
+The content-owner partition is implemented by `art/01.svg` through
+`art/30.svg`. Each uses `viewBox="0 0 1000 400"`, resolves its colours and
 type into inline presentation styles, and has no external asset references.
 The host keeps its existing embedded OFL font faces and licences. The drawings
 adapt the larger composition without distorting its aspect ratio; their
@@ -110,7 +118,7 @@ recap pictures stay complete. Structural panels remain visible as context;
 icons, labels and connectors reveal in their teaching order. Hidden tests
 appear before the builder works, and terminal commands appear in order.
 
-Inline `reveal-steps.css` and `reveal-navigation.js` in the single HTML deck,
+Link the canonical `style.css` and inline `reveal-navigation.js` in the deck,
 replacing its previous navigation handler. Do not install both handlers.
 Arrow keys and clicks reveal the next stage; the press after the last stage
 advances the slide. Back reverses the build, then returns to the completed
@@ -121,7 +129,10 @@ Without this controller the SVG content remains fully visible.
 review HTML from the exact c268 input. It refuses a different revision rather
 than silently replacing the content owner's newer words. That candidate also
 retains the within-part breadcrumb counter. The content owner receives the
-SVGs, controller and CSS and publishes through the same PR131.
+SVGs, controller and CSS and publishes through the same PR131. The candidate
+links `style.css` as a local asset, and its gate records the stylesheet's exact
+bytes and hash before rendering and verifies they did not change afterwards.
+Other unbound local assets fail rather than silently escaping source binding.
 
 Use `check-layout.mjs --capture-steps` for initial and intermediate reveal
 screenshots in addition to every completed slide at both resolutions. The

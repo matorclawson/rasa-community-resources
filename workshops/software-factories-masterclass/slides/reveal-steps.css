@@ -1,6 +1,0 @@
-/* sow: software-factories-masterclass-SOW-02
- * All teaching content is visible without the reveal controller.
- * Visibility changes are immediate and work with reduced motion.
- */
-.step-navigation .slide .step:not(.shown) { visibility: hidden; }
-.step-navigation .slide .step.shown { visibility: visible; }

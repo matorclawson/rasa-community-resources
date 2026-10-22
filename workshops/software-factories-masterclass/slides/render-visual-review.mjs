@@ -12,7 +12,7 @@ const output = path.resolve(i < 0 ? 'visual-system-review' : process.argv[i + 1]
 const seed = await fs.readFile(path.join(here, 'index.html'), 'utf8');
 const fonts = [...seed.matchAll(/@font-face\{[^}]+\}/g)].map(m => m[0]).join('\n');
 if (!fonts || /font-family\s*:\s*['"]?STK/i.test(fonts)) throw Error('Expected the existing embedded OFL fallback faces only');
-const css = await fs.readFile(path.join(here, 'visual-system.css'), 'utf8');
+const css = await fs.readFile(path.join(here, 'style.css'), 'utf8');
 const samples = [
   ['A traveller needs four answers, all at once.', diagrams.traveller()],
   ['One agent brings those answers together.', diagrams.traveller({ connected: true })],

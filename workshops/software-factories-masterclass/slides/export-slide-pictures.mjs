@@ -17,7 +17,7 @@ const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 if (hash(original) !== '20eabce9d3c82617a9bfbb4f2b4c81f620a0a814af895c8df21a3a28489ffec5') throw Error('Different deck revision: rebind current content before exporting');
 if (source === path.join(output, 'index.html')) throw Error('Output must be a separate review directory');
 const controller = await fs.readFile(path.join(here, 'reveal-navigation.js'), 'utf8');
-const css = await fs.readFile(path.join(here, 'reveal-steps.css'), 'utf8');
+const css = await fs.readFile(path.join(here, 'style.css'), 'utf8');
 const require = createRequire(import.meta.url);
 const { chromium } = require(option('--playwright', 'playwright-core'));
 const browser = await chromium.launch({ headless: true });
@@ -140,7 +140,14 @@ try {
       const position = seen[part] = (seen[part] || 0) + 1;
       label.textContent += ` · Slide ${position} of ${totals[part]}`;
     });
-    const style = document.createElement('style'); style.textContent = css; document.head.append(style);
+    // Keep the licensed font faces embedded; bind the canonical LOOK file as
+    // a local offline stylesheet. SVG artwork is inlined by the owner's
+    // generator so reveal groups remain in the page DOM.
+    const fontFaces = [...document.querySelectorAll('style')].flatMap(style =>
+      [...style.textContent.matchAll(/@font-face\{[^}]+\}/g)].map(match => match[0])).join('\n');
+    document.querySelectorAll('style').forEach(style => style.remove());
+    const fonts = document.createElement('style'); fonts.textContent = fontFaces; document.head.append(fonts);
+    const styleLink = document.createElement('link'); styleLink.rel = 'stylesheet'; styleLink.href = './style.css'; document.head.append(styleLink);
     document.querySelectorAll('script').forEach(script => script.remove());
     const script = document.createElement('script'); script.textContent = controller; document.body.append(script);
     // Do not execute the new controller inside the old document/listeners.
@@ -148,12 +155,12 @@ try {
     slides[0].classList.add('on');
     return { pictures: result, copyPreserved: true, partPositions: true, html: '<!doctype html>\n' + document.documentElement.outerHTML };
   }, { controller, css });
-  await fs.mkdir(path.join(output, 'pics'), { recursive: true });
-  for (const picture of exported.pictures) await fs.writeFile(path.join(output, 'pics', picture.name), picture.svg + '\n');
+  await fs.mkdir(path.join(output, 'art'), { recursive: true });
+  for (const picture of exported.pictures) await fs.writeFile(path.join(output, 'art', picture.name), picture.svg + '\n');
   await fs.writeFile(path.join(output, 'index.html'), exported.html);
+  await fs.writeFile(path.join(output, 'style.css'), css);
   await fs.copyFile(path.join(here, 'FONT-LICENSES.txt'), path.join(output, 'FONT-LICENSES.txt'));
   await fs.copyFile(path.join(here, 'reveal-navigation.js'), path.join(output, 'reveal-navigation.js'));
-  await fs.copyFile(path.join(here, 'reveal-steps.css'), path.join(output, 'reveal-steps.css'));
   await fs.writeFile(path.join(output, 'receipt.json'), JSON.stringify({ sow: 'software-factories-masterclass-SOW-02',
     parentHead: 'c268eccc202fa892ee222833f9fdb8add57d2c6f', parentHtmlSha256: hash(original), candidateHtmlSha256: hash(exported.html),
     copyPreserved: exported.copyPreserved, partPositions: exported.partPositions,

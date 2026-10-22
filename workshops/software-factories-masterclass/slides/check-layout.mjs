@@ -23,11 +23,26 @@ const require = createRequire(import.meta.url);
 const { chromium } = require(arg('--playwright', 'playwright-core'));
 const sourceBytes = await fs.readFile(source);
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
+const localStylesheets = [];
+for (const match of sourceBytes.toString().matchAll(/<link\b[^>]*>/gi)) {
+  const rel = match[0].match(/\brel\s*=\s*["']([^"']+)["']/i)?.[1] || '';
+  if (!rel.toLowerCase().split(/\s+/).includes('stylesheet')) continue;
+  const href = match[0].match(/\bhref\s*=\s*["']([^"']+)["']/i)?.[1];
+  if (!href) throw Error('Stylesheet link lacks href');
+  const url = new URL(href, pathToFileURL(source));
+  if (url.protocol !== 'file:') continue; // Rendering rejects network requests.
+  const filename = fileURLToPath(url);
+  if (localStylesheets.some(s => s.path === filename)) continue;
+  const bytes = await fs.readFile(filename);
+  localStylesheets.push({ path: filename, url: url.href, bytes: bytes.length, sha256: sha256(bytes) });
+}
+const boundFiles = new Set([source, ...localStylesheets.map(s => s.path)]);
 await fs.mkdir(output, { recursive: true });
 const report = {
   sow: 'software-factories-masterclass-SOW-02',
   createdAt: new Date().toISOString(),
   source, sourceSha256: sha256(sourceBytes),
+  localStylesheets,
   gateSha256: sha256(await fs.readFile(fileURLToPath(import.meta.url))),
   policy: { maximumSlides: 30, maximumBodyWords: 12, marginRatio: 0.06,
     titlePxAt1920: 64, bodyPxAt1920: 36, labelPxAt1920: 28,
@@ -48,6 +63,10 @@ try {
     await page.route('**/*', route => {
       if (/^https?:/.test(route.request().url())) {
         errors.push(`Network request: ${route.request().url()}`);
+        return route.abort();
+      }
+      if (route.request().url().startsWith('file:') && !boundFiles.has(fileURLToPath(route.request().url()))) {
+        errors.push(`Unbound local asset: ${route.request().url()}`);
         return route.abort();
       }
       return route.continue();
@@ -199,6 +218,11 @@ try {
 } finally {
   await browser.close();
   if (sha256(await fs.readFile(source)) !== report.sourceSha256) report.failures.push('Deck source changed during gate');
+  for (const stylesheet of localStylesheets) {
+    try {
+      if (sha256(await fs.readFile(stylesheet.path)) !== stylesheet.sha256) report.failures.push(`Stylesheet changed during gate: ${stylesheet.path}`);
+    } catch { report.failures.push(`Stylesheet unavailable after gate: ${stylesheet.path}`); }
+  }
   report.failedSlides = report.slides.filter(s => s.failures.length).length;
   report.passed = !report.failures.length && !report.failedSlides;
   await fs.writeFile(path.join(output, 'report.json'), JSON.stringify(report, null, 2) + '\n');

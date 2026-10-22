@@ -86,3 +86,9 @@ a:focus-visible { outline: 4px solid var(--pink); outline-offset: 6px; }
   html, body { width: 1920px; height: auto; }
   .slide { display: block !important; position: relative; break-after: page; width: 1920px; height: 1080px; }
 }
+.slide .words { position: absolute; left: 6.25vw; right: 6.25vw; top: 23.6vh;
+  margin: 0; font: 400 2.0833vw/1.2 var(--sans); }
+.dark .words { color: var(--cream); }
+/* Keep all SVG teaching content visible when the controller is absent. */
+.step-navigation .slide .step:not(.shown) { visibility: hidden; }
+.step-navigation .slide .step.shown { visibility: visible; }
