@@ -27,6 +27,7 @@ const report = {
   sow: 'software-factories-masterclass-SOW-02',
   createdAt: new Date().toISOString(),
   source, sourceSha256: sha256(sourceBytes),
+  gateSha256: sha256(await fs.readFile(fileURLToPath(import.meta.url))),
   policy: { maximumSlides: 30, maximumBodyWords: 12, marginRatio: 0.06,
     titlePxAt1920: 64, bodyPxAt1920: 36, labelPxAt1920: 28,
     minimumVisualAreaRatio: 0.5, viewports: [[1920, 1080], [1280, 720]],
@@ -153,7 +154,25 @@ try {
         }
         const fontFaces = [...document.fonts].map(f => ({ family: f.family, status: f.status }));
         if (fontFaces.some(f => f.status === 'error')) failures.push('An embedded font failed to load');
-        return { id: slide.id, title: slide.querySelector('h1')?.textContent, bodyWords: words.length, visualAreaRatio, text, visuals, fontFaces, failures: [...new Set(failures)] };
+        const contentRects = [...text.map(t => t.rect), ...visuals.filter(v => v.rect).map(v => v.rect)];
+        const marginsPx = { left: Math.min(...contentRects.map(r => r.x)),
+          right: width - Math.max(...contentRects.map(r => r.right)),
+          top: Math.min(...contentRects.map(r => r.y)),
+          bottom: height - Math.max(...contentRects.map(r => r.bottom)) };
+        const marginsFraction = { left: marginsPx.left / width, right: marginsPx.right / width,
+          top: marginsPx.top / height, bottom: marginsPx.bottom / height };
+        const minimumFontPx = Object.fromEntries(['title', 'body', 'label'].map(role => {
+          const values = text.filter(t => t.role === role).map(t => t.actualPx);
+          return [role, values.length ? Math.min(...values) : null];
+        }));
+        const overflowPx = { documentX: Math.max(0, document.documentElement.scrollWidth - width),
+          documentY: Math.max(0, document.documentElement.scrollHeight - height),
+          slideX: Math.max(0, slide.scrollWidth - slide.clientWidth),
+          slideY: Math.max(0, slide.scrollHeight - slide.clientHeight) };
+        const overlapFindings = failures.filter(f => f.startsWith('Overlapping text') || f.startsWith('Text overlaps picture'));
+        return { id: slide.id, title: slide.querySelector('h1')?.textContent, bodyWords: words.length,
+          visualAreaRatio, minimumFontPx, marginsPx, marginsFraction, overflowPx, overlapFindings,
+          text, visuals, fontFaces, failures: [...new Set(failures)] };
       }, { width, height });
       if (metrics.id !== slideIds[index]) metrics.failures.push(`Navigation showed ${metrics.id}, expected ${slideIds[index]}`);
       const filename = `slide-${String(index + 1).padStart(2, '0')}-${width}x${height}.png`;
