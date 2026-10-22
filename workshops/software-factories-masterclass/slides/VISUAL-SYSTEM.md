@@ -1,7 +1,8 @@
 # Masterclass visual system
 
-The designer supplies `visual-system.css`, `visual-diagrams.mjs` and
-`check-layout.mjs`. The slide story and text live in `build-deck.mjs`, which writes the single
+The canonical visual assets are `style.css` and `art/01.svg` through
+`art/30.svg`. The current generator uses `visual-system.css` and diagram
+helpers until the canonical asset port passes receiving. The slide story and text live in `build-deck.mjs`, which writes the single
 offline `index.html`. These source helpers are build-time tools: inline the
 CSS and generated SVGs into that file. The final deck needs no module loader,
 package install, external font host or network connection.
@@ -65,3 +66,16 @@ overflow, visual-area, word-count, overlap, list, fixed-chrome and navigation
 fixtures. It passes only when the gate rejects the expected defect at both
 resolutions. These fixtures prove detection behavior, not the teaching quality
 of the finished deck.
+
+## Canonical asset port
+
+The port follows the current thirty-slide order. It changes no title, line,
+breadcrumb or diagram label. Illustrations use a 1000 × 400 viewBox and
+inline presentation styles; retain the existing licensed font-face embeds.
+Inline artwork during generation so its reveal groups remain in the DOM.
+Use the current reveal controller once. Link or inline `style.css` as the
+only composition stylesheet, rather than layering two layout systems.
+Slide 29 is a static illustration of a coffee break and returning to the book.
+The generator and publication remain with the content owner. Integrate only
+when the exact resulting deck passes layout and independent stage review;
+otherwise retain the existing integrated presentation for the class.
