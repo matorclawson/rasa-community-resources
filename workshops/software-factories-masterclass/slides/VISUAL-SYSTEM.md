@@ -94,3 +94,40 @@ each fully revealed slide, and checks that the expected slide actually showed.
 The bridge does **not** resolve the remaining word-count failures: diagram
 labels and body copy share the 12-word budget. Rasa-ops retains that content
 decision and the final story; a geometry-only pass is not a finished deck pass.
+
+## Thirty SVGs and teaching reveals
+
+The content-owner partition is implemented by `pics/01.svg` through
+`pics/30.svg`. Each uses `viewBox="0 0 1000 400"`, resolves its colours and
+type into inline presentation styles, and has no external asset references.
+The host keeps its existing embedded OFL font faces and licences. The drawings
+adapt the larger composition without distorting its aspect ratio; their
+smallest effective type is above 17 viewBox units.
+
+These pictures preserve the complete title/body/diagram wording of PR131
+`c268eccc`. Twenty-five teaching diagrams build in stages. Five orientation or
+recap pictures stay complete. Structural panels remain visible as context;
+icons, labels and connectors reveal in their teaching order. Hidden tests
+appear before the builder works, and terminal commands appear in order.
+
+Inline `reveal-steps.css` and `reveal-navigation.js` in the single HTML deck,
+replacing its previous navigation handler. Do not install both handlers.
+Arrow keys and clicks reveal the next stage; the press after the last stage
+advances the slide. Back reverses the build, then returns to the completed
+previous slide. Home and End show the cover and complete closing slide.
+Without this controller the SVG content remains fully visible.
+
+`export-slide-pictures.mjs` reproduces the pictures and a separate integrated
+review HTML from the exact c268 input. It refuses a different revision rather
+than silently replacing the content owner's newer words. That candidate also
+retains the within-part breadcrumb counter. The content owner receives the
+SVGs, controller and CSS and publishes through the same PR131.
+
+Use `check-layout.mjs --capture-steps` for initial and intermediate reveal
+screenshots in addition to every completed slide at both resolutions. The
+report records the stage count and every frame's hash. Full layout checks
+apply to completed compositions; stage screenshots require visual review.
+`check-reveal-navigation.mjs` exercises actual keyboard/click behavior, source
+ordering, the protected-test sequence, factory assembly, terminal commands,
+reverse navigation and Home/End in the browser. Candidate evidence does not
+qualify a subsequently changed head.

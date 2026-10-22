@@ -18,6 +18,7 @@ const arg = (name, fallback) => {
 };
 const source = path.resolve(arg('--deck', path.join(here, 'index.html')));
 const output = path.resolve(arg('--out', path.join(process.cwd(), 'slide-layout-evidence')));
+const captureSteps = args.includes('--capture-steps');
 const require = createRequire(import.meta.url);
 const { chromium } = require(arg('--playwright', 'playwright-core'));
 const sourceBytes = await fs.readFile(source);
@@ -60,6 +61,12 @@ try {
     await page.keyboard.press('Home');
     for (let index = 0; index < count; index++) {
       if (index) await page.keyboard.press('ArrowRight');
+      const revealFrames = [];
+      const captureStep = async step => {
+        const filename = `slide-${String(index + 1).padStart(2, '0')}-step-${String(step).padStart(2, '0')}-${width}x${height}.png`;
+        const png = await page.screenshot({ path: path.join(output, filename), animations: 'disabled' });
+        revealFrames.push({ step, screenshot: filename, screenshotSha256: sha256(png) });
+      };
       // A teaching diagram may reveal several stages before ArrowRight moves
       // to the next slide. Exercise those stages through the real controls,
       // then measure the fully revealed composition, not the previous slide.
@@ -68,7 +75,11 @@ try {
         return Math.max(0, ...[...(slide?.querySelectorAll('.step[data-s]') || [])].map(s => Number(s.dataset.s) || 0));
       });
       if (revealSteps > 40) throw Error(`Unbounded reveal sequence: ${revealSteps}`);
-      for (let step = 0; step < revealSteps; step++) await page.keyboard.press('ArrowRight');
+      if (captureSteps && revealSteps) await captureStep(0);
+      for (let step = 0; step < revealSteps; step++) {
+        await page.keyboard.press('ArrowRight');
+        if (captureSteps) await captureStep(step + 1);
+      }
       await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
       const metrics = await page.evaluate(({ width, height }) => {
         const visible = el => {
@@ -178,7 +189,7 @@ try {
       const filename = `slide-${String(index + 1).padStart(2, '0')}-${width}x${height}.png`;
       await page.screenshot({ path: path.join(output, filename), animations: 'disabled' });
       const screenshot = await fs.readFile(path.join(output, filename));
-      report.slides.push({ index: index + 1, width, height, revealSteps, ...metrics, screenshot: filename, screenshotSha256: sha256(screenshot) });
+      report.slides.push({ index: index + 1, width, height, revealSteps, revealFrames, ...metrics, screenshot: filename, screenshotSha256: sha256(screenshot) });
     }
     report.failures.push(...errors.map(e => `${width}: ${e}`));
     await page.close();
