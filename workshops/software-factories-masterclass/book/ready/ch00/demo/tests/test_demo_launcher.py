@@ -122,6 +122,44 @@ class LauncherControls(unittest.TestCase):
         with socket.socket() as client:
             self.assertNotEqual(client.connect_ex(('127.0.0.1', port)), 0)
 
+    def test_close_waits_for_descendants_after_leader_exits(self):
+        children = demo.Children()
+        process = unittest.mock.Mock(pid=123456)
+        children.processes = [process]
+        clock = [0.0]
+        probes = [0]
+        sent = []
+        def signal_group(pid, sig):
+            if sig:
+                sent.append(sig)
+            else:
+                probes[0] += 1
+                if probes[0] >= 3:
+                    raise ProcessLookupError()
+        def advance(seconds):
+            clock[0] += seconds
+        with patch.object(demo.os, 'killpg', side_effect=signal_group), \
+                patch.object(demo.time, 'monotonic', side_effect=lambda: clock[0]), \
+                patch.object(demo.time, 'sleep', side_effect=advance):
+            children.close()
+        self.assertGreater(clock[0], 0)
+        self.assertEqual(sent, [demo.signal.SIGTERM])
+        process.wait.assert_called_once()
+
+    def test_close_still_refuses_a_group_that_outlives_both_deadlines(self):
+        children = demo.Children()
+        children.processes = [unittest.mock.Mock(pid=123456)]
+        clock = [0.0]
+        def advance(seconds):
+            clock[0] += seconds
+        with patch.object(demo.os, 'killpg') as killpg, \
+                patch.object(demo.time, 'monotonic', side_effect=lambda: clock[0]), \
+                patch.object(demo.time, 'sleep', side_effect=advance):
+            with self.assertRaises(demo.DemoError):
+                children.close()
+        self.assertAlmostEqual(clock[0], 5.0)
+        self.assertIn(unittest.mock.call(123456, demo.signal.SIGKILL), killpg.call_args_list)
+
     def test_failed_voice_start_retries_text_once_without_stopping_source(self):
         first, second = object(), object()
         children = unittest.mock.Mock()
@@ -286,7 +324,7 @@ class ScriptedRouting(unittest.IsolatedAsyncioTestCase):
         notice = discovery_notice(search)
         self.assertIn('My suggestion is United Airlines 57', notice)
         self.assertIn('soonest', notice)
-        for answer in ('yes', 'that one', 'yes that one', 'Yes. That', 'yeah', 'that is the one', 'yes please'):
+        for answer in ('yes', 'that one', 'yes that one', 'Yes, that one', 'Yes. That', 'yeah', 'that is the one', 'yes please'):
             response = await self.call([{'role': 'tool', 'content': json.dumps(search)},
                 {'role': 'assistant', 'content': notice}, {'role': 'user', 'content': answer}], ['briefing', 'find_flights'])
             self.assertEqual(response.tool_calls[0].tool_args,
@@ -314,7 +352,7 @@ class ScriptedRouting(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(first.tool_calls)
         self.assertIn('Which flight', first.response_text())
         history += [{'role': 'user', 'content': 'no'}, {'role': 'assistant', 'content': first.response_text()}]
-        for answer in ('no', 'yes', 'that one', 'Yes. That', 'yeah'):
+        for answer in ('no', 'yes', 'that one', 'yes, that one', 'Yes, that one', 'Yes. That', 'yeah'):
             followup = await self.call(history + [{'role': 'user', 'content': answer}], ['briefing', 'find_flights'])
             self.assertFalse(followup.tool_calls)
             self.assertNotIn('?', followup.response_text())
