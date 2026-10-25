@@ -26,6 +26,10 @@ def install_inspector_audit():
         app = original(*args, **kwargs)
         async def access(request):
             record_access('inspector', request.ip)
+            peers = os.environ.get('BRIEFING_ALLOWED_PEERS')
+            if peers and request.ip not in peers.split(','):
+                from sanic.response import text
+                return text('Viewer not allowed', status=403)
         app.register_middleware(access, 'request')
         return app
     run.configure_app = configure

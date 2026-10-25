@@ -65,7 +65,7 @@ header{padding:12px 20px}h1{font-size:20px;margin:0}main{display:grid;grid-templ
 iframe{border:1px solid #d3d7df;border-radius:8px;background:white;width:100%;height:100%}
 @media(max-width:800px){body{height:auto}main{grid-template-columns:1fr;height:auto}iframe{height:75vh}}
 </style></head><body><header><h1>Flight briefing</h1></header><main>
-<iframe title="Mantle conversation" src="http://127.0.0.1:5005/webhooks/inspector/inspect.html?projectUrl=http%3A%2F%2F127.0.0.1%3A5005"></iframe>
+<iframe allow="microphone; autoplay" title="Mantle conversation" src="http://127.0.0.1:5005/webhooks/inspector/inspect.html?projectUrl=http%3A%2F%2F127.0.0.1%3A5005"></iframe>
 <iframe title="Validated source cards" src="/cards"></iframe>
 </main></body></html>"""
 

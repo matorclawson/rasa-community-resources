@@ -27,6 +27,9 @@ def display_hosts(host):
 
 
 def allowed_client(client, host):
+    peers = os.environ.get('BRIEFING_ALLOWED_PEERS')
+    if peers:
+        return client in peers.split(',')
     if client == LOOPBACK:
         return True
     try:
