@@ -19,9 +19,11 @@ function and starts being a call across a **trust boundary**: credentials,
 timeouts, rate limits, and the difference between "no such customer" and "the
 CRM is down".
 
-Part two then swaps the transport out from under those same three skills — REST
-becomes MCP — and shows that their instructions do not change. See
-[Part two: the same agent over MCP](#part-two-the-same-agent-over-mcp).
+Part two contains a loopback MCP experiment. It preserves instructional prose,
+but it also shows why a customer-specific CRM tool cannot be moved unchanged:
+the REST version reads `contact_id` from trusted `ToolContext`, while an
+imported MCP tool receives it as a model-supplied argument. Keep that identity
+binding in a local Rasa tool before a remote CRM call.
 
 ## You do not need a HubSpot account
 
@@ -182,7 +184,7 @@ make mcp-restore  # move it back to REST
 make mcp-status   # say which transport is live
 ```
 
-## Part two: the same agent over MCP
+## Part two: a transport experiment, not a customer-identity migration
 
 This tutorial used to end with a promise:
 
@@ -192,10 +194,17 @@ This tutorial used to end with a promise:
 > REST. When MCP lands, the same three skills can keep their instructions and
 > swap `tools/crm.py` for imported remote tools.
 
-MCP has landed, and the promise held. `rasa-pro 3.21.0.dev5` connects to
-`mcp_servers:` and resolves `import_tools: mcp/<server>:<tool>` at model load.
-The three skills now run against a remote MCP server **with their instructions
-unchanged**.
+MCP has landed, and `rasa-pro 3.21.0.dev5` connects to `mcp_servers:` and
+resolves `import_tools: mcp/<server>:<tool>` at model load. The bundled
+`mcp_variant` establishes a narrow transport fact: its instruction bodies are
+unchanged and its loopback server returns the expected fixture shape.
+
+It is **not** a production recipe for customer-specific reads or writes. Its
+remote `list_open_tickets(contact_id)` and `add_timeline_note(contact_id, ... )`
+accept a model-supplied id. The REST versions instead read that id from the
+verified caller state in `ToolContext`. A real migration must retain a local
+Rasa boundary that reads the verified id, checks the operation, and only then
+calls the remote service with that bound value.
 
 Not "barely changed". Unchanged. Here is the entire difference, all three skills:
 
@@ -217,10 +226,10 @@ Not "barely changed". Unchanged. Here is the entire difference, all three skills
 +  - mcp/hubspot_crm:add_timeline_note
 ```
 
-Every changed line is inside the YAML frontmatter. Not one line of instruction
-prose moved — the branching on `not_identified`, the `waiting_on_us` wording,
-the ordered block, the confirmation constraint, all byte-identical. `make
-mcp-prove` asserts that, and fails if it ever stops being true.
+Every changed line is inside the YAML frontmatter. That is evidence about
+instruction prose only. `make mcp-prove` does not prove that the customer id
+belongs to the caller, so it must not be used to approve an identity-sensitive
+transport swap.
 
 The lesson is the one thing a from-scratch MCP tutorial cannot teach: **skill
 instructions are written against a tool's name and result shape, not against its
