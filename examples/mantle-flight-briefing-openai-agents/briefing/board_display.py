@@ -47,7 +47,7 @@ class BoardDisplay:
             (b'referrer-policy', b'no-referrer'),
             (b'x-content-type-options', b'nosniff'),
             (b'content-security-policy',
-             ("default-src 'none'; style-src 'unsafe-inline'; frame-src 'self' http://" + self._host + ":5005; frame-ancestors 'none'; base-uri 'none'; form-action 'none'").encode()
+             ("default-src 'none'; style-src 'unsafe-inline'; frame-src 'self' http://" + self._host + ":5022; frame-ancestors 'none'; base-uri 'none'; form-action 'none'").encode()
              if dashboard else b"default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'self'; base-uri 'none'; form-action 'none'"),
         ]
         if status == 200 and not dashboard:
@@ -65,7 +65,7 @@ header{padding:12px 20px}h1{font-size:20px;margin:0}main{display:grid;grid-templ
 iframe{border:1px solid #d3d7df;border-radius:8px;background:white;width:100%;height:100%}
 @media(max-width:800px){body{height:auto}main{grid-template-columns:1fr;height:auto}iframe{height:75vh}}
 </style></head><body><header><h1>Flight briefing</h1></header><main>
-<iframe title="Mantle conversation" src="http://127.0.0.1:5005/webhooks/inspector/inspect.html?projectUrl=http%3A%2F%2F127.0.0.1%3A5005"></iframe>
+<iframe title="Mantle conversation" src="http://127.0.0.1:5022/webhooks/inspector/inspect.html?projectUrl=http%3A%2F%2F127.0.0.1%3A5022"></iframe>
 <iframe title="Validated source cards" src="/cards"></iframe>
 </main></body></html>"""
 
@@ -73,7 +73,7 @@ iframe{border:1px solid #d3d7df;border-radius:8px;background:white;width:100%;he
 def dashboard_html(host):
     validate_host(host)
     return DASHBOARD.replace(b'127.0.0.1', host.encode()).replace(
-        b'http%3A%2F%2F127.0.0.1%3A5005', quote('http://' + host + ':5005', safe='').encode())
+        b'http%3A%2F%2F127.0.0.1%3A5022', quote('http://' + host + ':5022', safe='').encode())
 
 
 # Semantic Rasa roles from supplied brand tokens v0.2.0 (2026-10-16).

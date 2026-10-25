@@ -295,7 +295,7 @@ def setup():
 
 
 def require_free_ports(host="127.0.0.1"):
-    for port in (8942, 5005):
+    for port in (8962, 5022):
         with socket.socket() as probe:
             try:
                 probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -323,7 +323,7 @@ def start_inspector(children, env, mode):
     argv = [str(python_at(PROJECT)), str(Path(__file__).resolve()), '_inspector', mode]
     process = children.start(argv, cwd=PROJECT, env=env)
     try:
-        wait_http(process, 'http://' + env.get('BRIEFING_DEMO_HOST', '127.0.0.1') + ':5005/webhooks/inspector/inspect.html', timeout=90)
+        wait_http(process, 'http://' + env.get('BRIEFING_DEMO_HOST', '127.0.0.1') + ':5022/webhooks/inspector/inspect.html', timeout=90)
         return process, env
     except DemoError:
         if not env.get('DEEPGRAM_API_KEY', '').strip():
@@ -333,7 +333,7 @@ def start_inspector(children, env, mode):
         text_env.pop('DEEPGRAM_API_KEY', None)
         print(VOICE_FAILED_TEXT, flush=True)
         process = children.start(argv, cwd=PROJECT, env=text_env)
-        wait_http(process, 'http://' + env.get('BRIEFING_DEMO_HOST', '127.0.0.1') + ':5005/webhooks/inspector/inspect.html', timeout=90)
+        wait_http(process, 'http://' + env.get('BRIEFING_DEMO_HOST', '127.0.0.1') + ':5022/webhooks/inspector/inspect.html', timeout=90)
         return process, text_env
 
 
@@ -396,12 +396,12 @@ def run_demo(scripted=False, host="127.0.0.1"):
         print('Managed Agents API selects real public-source tools.' if managed_sources
               else SCRIPTED_LABEL, flush=True)
         service = children.start([str(python_at(WORKER)), '-m', 'briefing', '--public-sources', '--host', host], cwd=ROOT, env=env)
-        wait_http(service, 'http://' + host + ':8942/cards')
+        wait_http(service, 'http://' + host + ':8962/cards')
         mode = 'scripted' if scripted else 'live'
         inspector, inspector_env = start_inspector(children, env, mode)
-        print('Open the demo: http://' + host + ':8942/', flush=True)
-        print('Cards diagnostic: http://' + host + ':8942/cards', flush=True)
-        print('Mantle Inspector diagnostic: http://' + host + ':5005/webhooks/inspector/inspect.html', flush=True)
+        print('Open the demo: http://' + host + ':8962/', flush=True)
+        print('Cards diagnostic: http://' + host + ':8962/cards', flush=True)
+        print('Mantle Inspector diagnostic: http://' + host + ':5022/webhooks/inspector/inspect.html', flush=True)
         print('Open the page and ask, for example: Which flights are in the air heading to New York?', flush=True)
         print('Choose a flight, then say when your meeting is, for example tomorrow at 6 pm.', flush=True)
         print('Press Ctrl-C here to stop both services and their children.', flush=True)
@@ -636,8 +636,8 @@ def install_mcp_host(host):
     original = MCPServersSettings.to_connection_config
     def connection(settings, server_id):
         result = original(settings, server_id)
-        if server_id == 'briefing' and result['url'] == 'http://127.0.0.1:8942/mcp':
-            result['url'] = 'http://' + validate_host(host) + ':8942/mcp'
+        if server_id == 'briefing' and result['url'] == 'http://127.0.0.1:8962/mcp':
+            result['url'] = 'http://' + validate_host(host) + ':8962/mcp'
         return result
     MCPServersSettings.to_connection_config = connection
 
@@ -665,7 +665,7 @@ def inspector(mode):
     if os.environ.get('BRIEFING_VIEWER_AUDIT'):
         from viewer_audit import install_inspector_audit
         install_inspector_audit()
-    sys.argv = ['rasa', 'inspect', '--interface', host, '--port', '5005', '--quiet']
+    sys.argv = ['rasa', 'inspect', '--interface', host, '--port', '5022', '--quiet']
     rasa_main()
 
 
