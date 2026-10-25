@@ -12,7 +12,7 @@ from zoneinfo import ZoneInfo
 from briefing.published_routes import load_routes
 
 REFERENCE = Path(__file__).with_name('traveller-reference-20261022.json')
-REFERENCE_SHA256 = 'a2a034c8770c4bccae8ba1fa71737f16a6ed433280b255b7429c422cf555222a'
+REFERENCE_SHA256 = 'fde21572caac12d2b909fd69d1bb41de8c9c6075e5648e1967389be7df8986bd'
 
 
 class TravellerQuestion(ValueError):
@@ -47,17 +47,29 @@ def airport_row(code):
     return dict(found[0])
 
 
-def destination_hint(text):
+def _destination_resolution(text):
     value = normalized(text)
-    # Airport names/codes take precedence over a metro name in the same answer.
-    for airport in reference()['airports']:
-        for alias in (airport['ident'], airport['iata_code'], *airport['aliases']):
-            if re.search(r'(?<![a-z0-9])' + re.escape(normalized(alias)) + r'(?![a-z0-9])', value):
-                return airport['ident']
-    for city in sorted({a['city'] for a in reference()['airports']}, key=len, reverse=True):
-        if re.search(r'\b' + re.escape(normalized(city)) + r'\b', value):
-            return city
-    return 'New York' if re.search(r'\bnyc\b', value) else None
+    # Resolve the destination phrase, rather than the first airport in table
+    # order: "from Frankfurt to JFK" must not send the traveller to Frankfurt.
+    directed = re.search(r'\b(?:to|heading for|(?:land(?:ing)?|arriv(?:e|ing)) (?:at|in))\s+(.+)', value)
+    if directed:
+        value = re.split(r'[,;!?]|\b(?:via|from|for|on|with)\b', directed[1], maxsplit=1)[0]
+    value = re.sub(r'[^a-z0-9]+', ' ', value).strip()
+    def present(alias):
+        alias = re.sub(r'[^a-z0-9]+', ' ', normalized(alias)).strip()
+        return bool(alias and re.search(r'(?<![a-z0-9])' + re.escape(alias) + r'(?![a-z0-9])', value))
+    airports = {airport['ident'] for airport in reference()['airports']
+                if any(present(alias) for alias in (airport['ident'], airport['iata_code'], airport['name'], *airport['aliases']))}
+    if airports:
+        return (next(iter(airports)), False) if len(airports) == 1 else (None, True)
+    cities = {airport['city'] for airport in reference()['airports']
+              if present(airport['city']) or any(present(alias) for alias in
+                  reference().get('city_aliases', {}).get(airport['city'], []))}
+    return ((next(iter(cities)), False) if len(cities) == 1 else (None, len(cities) > 1))
+
+
+def destination_hint(text):
+    return _destination_resolution(text)[0]
 
 
 def flight_number(text):
@@ -156,13 +168,23 @@ def transfer_time(text):
     value = normalized(text)
     if not re.search(r'\b(allow|transfer|airport|into town|city|getting|journey|drive|taxi)\b', value):
         return None
-    match = re.search(r'\b([0-9]{1,4})\s*(minute|hour)s?\b', value)
+    # Longer phrases precede their shorter substrings: "half an hour" is
+    # thirty, not the "an hour" found inside it.
+    if re.search(r'\b(?:an?|one) hour and a half\b', value):
+        return 90
+    if re.search(r'\bhalf an hour\b', value):
+        return 30
+    compound = re.search(r'\b([0-9]{1,2})\s*hours?\s*(?:and\s*)?([0-9]{1,2})\s*minutes?\b', value)
+    if compound:
+        hours, minutes = int(compound[1]), int(compound[2])
+        return hours * 60 + minutes if minutes < 60 and hours * 60 + minutes <= 1440 else None
+    match = re.search(r'(?<![a-z0-9.])([0-9]{1,4})\s*(minute|hour)s?\b', value)
     if match:
         minutes = int(match[1]) * (60 if match[2] == 'hour' else 1)
         return minutes if 0 <= minutes <= 1440 else None
     if re.search(r'\b(?:an|one) hour\b', value):
         return 60
-    return 30 if 'half an hour' in value else None
+    return None
 
 
 def journey(text, previous=None, *, now=None):
@@ -171,7 +193,9 @@ def journey(text, previous=None, *, now=None):
     selected = flight_number(text)
     if selected:
         inputs['callsign'] = selected
-    hint = destination_hint(text)
+    hint, ambiguous_destination = _destination_resolution(text)
+    if ambiguous_destination:
+        raise TravellerQuestion('destination', 'Which city or airport are you flying to?', inputs)
     if hint:
         inputs['destination_hint'] = hint
     hint = inputs.get('destination_hint') or inputs.get('destination')
@@ -192,7 +216,7 @@ def journey(text, previous=None, *, now=None):
     elif 'meeting=' in text or inputs.get('awaiting') == 'meeting_time':
         inputs.pop('meeting_time', None)
     minutes = transfer_time(('allow ' + text) if inputs.get('awaiting') == 'transfer_minutes' else text)
-    if minutes is None and ('transfer=' in text or re.search(r'\ballow\b.*\b(?:minutes?|hours?)\b', normalized(text))):
+    if minutes is None and (inputs.get('awaiting') == 'transfer_minutes' or 'transfer=' in text or re.search(r'\ballow\b.*\b(?:minutes?|hours?)\b', normalized(text))):
         inputs.pop('transfer_minutes', None)
         inputs['awaiting'] = 'transfer_minutes'
         raise TravellerQuestion('transfer_minutes', 'How long should I allow to get from the airport to your meeting?', inputs)
