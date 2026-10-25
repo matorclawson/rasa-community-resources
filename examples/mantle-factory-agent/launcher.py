@@ -15,7 +15,7 @@ from urllib.request import urlopen
 
 ROOT = Path(__file__).resolve().parent
 PROJECT = ROOT / 'project'
-PYTHON = PROJECT / '.venv/bin/python'
+PYTHON = Path('/Volumes/ZeoWork/rasa/gates/mantle-factory-agent-20261022/examples/mantle-factory-agent/project/.venv/bin/python')
 
 
 def inspector():
@@ -24,6 +24,18 @@ def inspector():
     from rasa.mantle.llm.client import LLMClient
     from scripted import ScriptedClient
     from rasa.core import run
+    from rasa.mantle.config import channels
+    from rasa.shared.utils.yaml import read_yaml_file
+    from voice_config import voice_channels
+    voice = voice_channels(os.environ)
+    def runtime_channels(project_root=None):
+        raw = read_yaml_file(Path(project_root or PROJECT) / 'integrations.yml', expand_env_vars=False)
+        result = dict(channels.parse_channels(raw.get('channels') or {}))
+        result.update(channels.parse_channels(voice))
+        return result
+    channels.load_integration_channels = runtime_channels
+    import voice_patch
+    voice_patch.install()
     original = run.configure_app
 
     def configure(*args, **kwargs):
@@ -39,7 +51,7 @@ def inspector():
         return app
     run.configure_app = configure
     LLMClient.from_bootstrap = classmethod(lambda cls, bootstrap: ScriptedClient())
-    sys.argv = ['rasa', 'inspect', '--interface', os.environ['FACTORY_HOST'], '--port', '5007', '--quiet']
+    sys.argv = ['rasa', 'inspect', '--interface', os.environ['FACTORY_HOST'], '--port', '5013', '--quiet']
     main()
 
 
@@ -69,7 +81,7 @@ def run(args):
     expiry = datetime.fromisoformat(args.expires_at.replace('Z', '+00:00'))
     if expiry.tzinfo is None or expiry <= datetime.now(timezone.utc):
         raise ValueError('Expiry must be a future UTC timestamp.')
-    for bind, port in [(host, 8947), (host, 5007), ('127.0.0.1', 8948)]:
+    for bind, port in [(host, 8953), (host, 5013), ('127.0.0.1', 8954)]:
         with socket.socket() as probe:
             probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             probe.bind((bind, port))
@@ -84,6 +96,12 @@ def run(args):
         license_value = dotenv_values(args.env_file, interpolate=False).get('RASA_LICENSE', '')
     if not license_value:
         raise ValueError('RASA_LICENSE is required, including scripted mode. Obtain a free Rasa Developer Edition license.')
+    voice_key = ''
+    if args.voice:
+        from dotenv import dotenv_values
+        voice_key = (dotenv_values(args.env_file, interpolate=False).get('DEEPGRAM_API_KEY', '') if args.env_file else '')
+        if not voice_key:
+            raise ValueError('Voice needs DEEPGRAM_API_KEY in the owner credential file.')
     allowed = {'127.0.0.1', host, *args.allow_peer}
     for peer in allowed:
         ipaddress.ip_address(peer)
@@ -125,11 +143,14 @@ def run(args):
         ]:
             log = open(runtime / (label + '.log'), 'ab')
             logs.append(log)
-            children.append(subprocess.Popen(command, cwd=cwd, env=env, stdout=log,
+            child_env = dict(env)
+            if label == 'inspector' and voice_key:
+                child_env['DEEPGRAM_API_KEY'] = voice_key
+            children.append(subprocess.Popen(command, cwd=cwd, env=child_env, stdout=log,
                                              stderr=subprocess.STDOUT, start_new_session=True))
-        wait_ready(children[1], f'http://{host}:5007/status')
-        wait_ready(children[2], f'http://{host}:8947/')
-        print(f'READY http://{args.viewer_name or host}:8947/ ; expires {args.expires_at}', flush=True)
+        wait_ready(children[1], f'http://{host}:5013/status')
+        wait_ready(children[2], f'http://{host}:8953/')
+        print(f'READY http://{args.viewer_name or host}:8953/ ; expires {args.expires_at}', flush=True)
         while datetime.now(timezone.utc) < expiry:
             if any(child.poll() is not None for child in children):
                 raise RuntimeError('An owned service stopped; closing the demonstration.')
@@ -164,6 +185,7 @@ if __name__ == '__main__':
         parser.add_argument('--viewer-name', default='')
         parser.add_argument('--viewer-access', default='')
         parser.add_argument('--allow-peer', action='append', default=[])
+        parser.add_argument('--voice', action='store_true', help='Enable Deepgram in the Inspector child only.')
         parser.add_argument('--builder-mode', type=str.upper, choices=['SCRIPTED', 'LIVE'], default='SCRIPTED')
         parser.add_argument('--worker-python', default=str(ROOT / 'worker/.venv/bin/python'))
         parser.add_argument('--evidence-root', default=str(ROOT / '.runtime/factory-evidence'))
