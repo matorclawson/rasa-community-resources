@@ -67,7 +67,7 @@ def main():
     app = create_app(Jobs(runner, replacement_plan=runner.replacement_plan,
                           ownership_mode="capability"), transport_token=token, host=args.host)
     try:
-        uvicorn.run(app, host=args.host, port=8942, log_level="warning")
+        uvicorn.run(app, host=args.host, port=8952, log_level="warning")
     finally:
         if args.public_sources:
             runner.close()

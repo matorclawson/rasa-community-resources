@@ -13,6 +13,6 @@ model_groups:
         api_key: ${ANTHROPIC_API_KEY}
 mcp_servers:
   - name: briefing
-    url: http://127.0.0.1:8942/mcp
+    url: http://127.0.0.1:8952/mcp
     token: ${BRIEFING_MCP_TOKEN}
     tool_timeout: 10
