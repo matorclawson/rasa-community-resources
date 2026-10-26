@@ -98,11 +98,10 @@ styles and SVG; it loads no remote browser assets.
 
 ## Optional live model and voice
 
-Voice was tested with Deepgram audio files today and failed on the second turn, so type your requests. The microphone path is untested.
+Use `make run-voice` for the patched Deepgram path described below. Earlier unpatched recorded-audio attempts failed after selection; their failure remains recorded. The physical microphone path is unqualified.
 
 Only the facilitator or participant supplies keys in the ignored example-root
-`.env` or their shell. Never paste values into chat, committed files, URLs or logs. There is no
-seat-operated live model or voice proof here. The selected model group remains
+`.env` or their shell. Never paste values into chat, committed files, URLs or logs. The local voice command uses scripted selection; the separate live-model path uses the selected model group
 in `project/integrations.yml`; choose `openai` or `anthropic` there before a live
 run with the matching environment key. A key for the other group alone does
 not establish readiness.
@@ -110,14 +109,14 @@ not establish readiness.
 This example folder is pinned to and tested on Rasa Pro 3.21.0.dev5. The current Mantle docs describe 3.21.0.dev12, where the model is set in agent.yml under orchestrator.model_group. Use this pack's files today. The workshop's Chapter 0 runs on Rasa Pro 3.21.0.
 
 Voice uses Deepgram Flux and Aura-2 through the maintained project integration.
-Without `DEEPGRAM_API_KEY`, the launcher prints “Voice is off; set DEEPGRAM_API_KEY in your environment to enable it, or continue with text.”
+Voice is opt-in: supply `DEEPGRAM_API_KEY` and run `make run-voice`. Ordinary `make run` leaves voice off.
 Voice must not block the cards or scripted path. The owner-supplied Flux/Aura-2
 configuration is merged only in the Inspector process, without writing keys.
 If the voice-configured Inspector cannot start, the launcher stops its owned
 process group and retries the actual Inspector once in text mode, leaving the
 source service running. `--scripted` disables model
 and voice credentials in its children. Actual voice failure fallback and spoken
-weather scenario S13 require the operator's live check; no voice PASS is claimed.
+weather scenario S13 require the operator's live check. Audio-file proof does not qualify a physical microphone.
 The owner-maintained doctor prints only SET or MISSING for credential names.
 
 The launcher reads only `RASA_LICENSE`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`
@@ -231,3 +230,103 @@ registry locks. The actual installed reader, real MCP requests, numbered flight
 selection, natural meeting input and four graphical cards pass an injected-provider
 integration control. No live provider/model, browser or voice acceptance is inferred
 from that control. Final consumer review and preview rehearsal remain required.
+
+## Voice, locally
+
+Run on your own Mac from this example directory. Keep the terminal running. Create your own Deepgram API key at https://console.deepgram.com/ (Deepgram offers free starting credit).
+
+```sh
+make env
+# Edit the ignored .env: set RASA_LICENSE and DEEPGRAM_API_KEY.
+make setup
+make run-voice
+```
+
+Open http://127.0.0.1:8942 in Chrome, allow microphone access, then start the voice conversation. Ask which flights are in the air heading to New York; confirm the suggested flight; say “six PM tomorrow”. The page should show four source cards. Local loopback supports browser microphone access without tailnet, TLS or browser flags.
+
+Voice uses Deepgram and explicitly scripted Mantle tool selection with real public sources. No OpenAI key is needed for this command. Only the Inspector child receives the Deepgram key. `make run-scripted` remains a text path without voice or model calls; `make run` retains the separate model path with voice disabled. File-audio tests passed on the patched runtime; a physical microphone still needs permission and device testing on your Mac.
+
+If the default ports are occupied:
+
+```sh
+BRIEFING_PAGE_PORT=8960 BRIEFING_INSPECTOR_PORT=5020 make run-voice
+```
+
+Use the printed page address. Stop the processes with Ctrl-C. Voice includes the pinned-engine in-memory repair in `voice_patch.py`; no installed package is edited.
+
+## Requalify the voice repair after changing pins
+
+`voice_patch.py` patches private engine names and remains the proven v1. `voice_compat.py` permits only the recorded Rasa Pro/Core pairs: 3.21.0.dev5 with Core 0.35.6 or 0.36.3. A different Rasa Pro or Core version refuses voice startup; the text path remains available. Do not add a pair merely to silence the check.
+
+After either pin moves, run the offline voice-patch regressions in the example's project environment, including EndOfTurn-only text, reconnect and idle silence. Then run real Deepgram file inputs through the Inspector: flight search, “yes that one”, and “six pm tomorrow” for travel; a factory request and its actual protected result for the factory. Record the exact versions, source head, transcripts and result before adding a qualified pair. This proves file speech only; physical microphone/browser permission needs a separate check. No provider call is part of the offline tests.
+
+## Receive the reviewed factory candidate
+
+The normal public-source runner already has four cards. The factory receiving
+exercise is a separate opt-in mode: `--factory-baseline` reads only flight,
+weather and arrival timeline sources. It makes no market request.
+`--factory-received RECEIVING_DIR` adds the exact reviewed A6 market module
+from a staged receiving directory. Both options belong to `python -m briefing`,
+are mutually exclusive with the other source/model modes, and use SCRIPTED tool
+control. Ambient model credentials do not turn either option into a model run.
+
+This receiver admits only the recorded A6 candidate with digest
+`ee6fafca627dcb6a07a7f7def556c2887f3c73dcf667684d38b45316f15031c1`.
+It is not a general loader for new Python plugins or arbitrary ACCEPT records.
+The owning facilitator supplies the original run directory and a new, separate
+receiving directory. From this example folder, using the locked worker:
+
+```python
+from pathlib import Path
+import subprocess
+from briefing.factory_receiver import SOURCE_HEAD, stage_accepted_run
+
+target_head = subprocess.check_output(
+    ['git', 'rev-parse', 'HEAD'], text=True).strip()
+if subprocess.check_output(['git', 'status', '--porcelain'], text=True).strip():
+    raise RuntimeError('Use a clean committed receiving tree')
+Path('.demo-cache').mkdir(exist_ok=True)
+receipt = stage_accepted_run(
+    '/path/to/original-reviewed-run', '.demo-cache/f7-received',
+    source_head=SOURCE_HEAD, target_head=target_head)
+assert receipt['status'] == 'STAGED'
+assert receipt['product_acceptance'] == 'NOT_RUN'
+```
+
+Staging checks the supplied records for a completed native turn, exact task and
+protected ACCEPT, then verifies the file allowlist and fixed reviewed candidate
+bytes. These JSON records are self-attested: anyone can write such fields, and
+the included fixture can pass the same checks. They do not authenticate a model
+run. The receipt records the SHA256 of the exact native, console, decision and
+task bytes that were parsed, labelled `self_attested_records_not_authenticated`,
+so different input records remain distinguishable. Hashing does not establish
+their origin. `source_head` names the owner-declared acquisition driver revision,
+which predates the staging hook; it is not an observed runtime revision.
+The receiver copies only the two admitted candidate files
+and a staging receipt. It never writes into the original run, executes the
+builder's tests or starts a process. Reusing a receiving directory is refused.
+The target head is the owner's declared source revision, not an observed
+running revision. `make_receiver_hook` supplies the existing trusted driver
+callback shape with `NOT_RECORDED/candidate_staged` and null runtime heads;
+staging cannot claim `APPLIED_RESTARTED`.
+
+Received mode rechecks the staging receipt and module bytes before each
+briefing, then calls the fixed reviewed `market_card(sources, currencies)`
+function. Core supplies and validates its reference rates, computed changes,
+provenance and unavailable result. A missing market source keeps the fourth
+card unavailable and the job incomplete; it never invents a rate or substitutes
+a replay. The candidate's test file remains opaque evidence.
+
+Run the offline controls without a model, provider request or service restart:
+
+```sh
+worker/.venv/bin/python -m unittest discover -s tests -p 'test_factory_*.py' -v
+```
+
+Those controls use explicit synthetic HTTP responses with real Core contracts,
+Jobs and the HTTP app. They show three cards before receiving and four after,
+with unchanged flight/weather/timeline values and meeting input. They are not
+an actual process-restart receipt. The receiving owner still has to review the
+source, restart an isolated owned runtime with the chosen option and verify
+the three-to-four-card change over product HTTP. A factory ACCEPT, staging
+receipt or injected HTTP test alone does not complete that product acceptance.

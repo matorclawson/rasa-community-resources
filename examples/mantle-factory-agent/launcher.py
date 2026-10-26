@@ -11,6 +11,7 @@ import socket
 import subprocess
 import sys
 import time
+import threading
 from urllib.request import urlopen
 
 ROOT = Path(__file__).resolve().parent
@@ -18,12 +19,61 @@ PROJECT = ROOT / 'project'
 PYTHON = PROJECT / '.venv/bin/python'
 
 
+def capture_log(process, log, environment):
+    """Redact runtime credentials before any child output reaches disk."""
+    values = [environment.get(k, '') for k in ('RASA_LICENSE', 'OPENAI_API_KEY', 'DEEPGRAM_API_KEY', 'FACTORY_MCP_TOKEN')]
+    writable = True
+    for raw in iter(process.stdout.readline, b''):
+        if not writable:
+            continue
+        text = raw.decode('utf-8', errors='replace')
+        for value in values:
+            if value:
+                text = text.replace(value, '[credential redacted]')
+                for i in range(max(0, len(value) - 7)):
+                    text = text.replace(value[i:i + 8], '[credential fragment redacted]')
+        try:
+            log.write(text.encode())
+            log.flush()
+        except (OSError, ValueError):
+            # A full/closed log must not fill the child's stdout pipe and hang it.
+            writable = False
+
+
+def install_mcp_port(port):
+    """Keep the valid checked-in URL, select the owner port only at connection time."""
+    from rasa.mantle.config.mcp import MCPServersSettings
+    original = MCPServersSettings.to_connection_config
+    def connection(settings, server_id):
+        result = original(settings, server_id)
+        if server_id == 'factory' and result['url'] == 'http://127.0.0.1:8948/mcp':
+            result['url'] = f'http://127.0.0.1:{port}/mcp'
+        return result
+    MCPServersSettings.to_connection_config = connection
+
+
 def inspector():
     sys.path.insert(0, str(ROOT))
     from rasa.__main__ import main
+    install_mcp_port(int(os.environ['FACTORY_MCP_PORT']))
     from rasa.mantle.llm.client import LLMClient
     from scripted import ScriptedClient
     from rasa.core import run
+    from rasa.mantle.config import channels
+    from rasa.shared.utils.yaml import read_yaml_file
+    from voice_config import voice_channels
+    voice = voice_channels(os.environ)
+    if voice:
+        def runtime_channels(project_root=None):
+            raw = read_yaml_file(Path(project_root or PROJECT) / 'integrations.yml', expand_env_vars=False)
+            result = dict(channels.parse_channels(raw.get('channels') or {}))
+            result.update(channels.parse_channels(voice))
+            return result
+        channels.load_integration_channels = runtime_channels
+        from voice_compat import require_qualified_voice_pins
+        require_qualified_voice_pins()
+        import voice_patch
+        voice_patch.install()
     original = run.configure_app
 
     def configure(*args, **kwargs):
@@ -38,8 +88,9 @@ def inspector():
         app.register_middleware(access, 'request')
         return app
     run.configure_app = configure
-    LLMClient.from_bootstrap = classmethod(lambda cls, bootstrap: ScriptedClient())
-    sys.argv = ['rasa', 'inspect', '--interface', os.environ['FACTORY_HOST'], '--port', '5007', '--quiet']
+    if os.environ.get('FACTORY_MANTLE_MODE', 'SCRIPTED') == 'SCRIPTED':
+        LLMClient.from_bootstrap = classmethod(lambda cls, bootstrap: ScriptedClient())
+    sys.argv = ['rasa', 'inspect', '--interface', os.environ['FACTORY_HOST'], '--port', os.environ['FACTORY_INSPECTOR_PORT'], '--quiet']
     main()
 
 
@@ -69,7 +120,10 @@ def run(args):
     expiry = datetime.fromisoformat(args.expires_at.replace('Z', '+00:00'))
     if expiry.tzinfo is None or expiry <= datetime.now(timezone.utc):
         raise ValueError('Expiry must be a future UTC timestamp.')
-    for bind, port in [(host, 8947), (host, 5007), ('127.0.0.1', 8948)]:
+    ports = (args.entry_port, args.inspector_port, args.mcp_port)
+    if any(not 1 <= port <= 65535 for port in ports) or len(set(ports)) != 3:
+        raise ValueError('Use three distinct ports between 1 and 65535.')
+    for bind, port in [(host, args.entry_port), (host, args.inspector_port), ('127.0.0.1', args.mcp_port)]:
         with socket.socket() as probe:
             probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             probe.bind((bind, port))
@@ -77,13 +131,26 @@ def run(args):
         raise ValueError('LIVE builder needs a separate worker: run ./demo setup-live first.')
     if not PYTHON.is_file():
         raise ValueError('Run ./demo setup first.')
-    # Only the license enters the child. Provider keys are deliberately absent.
+    # The license enters runtime children; Deepgram goes only to the opted-in Inspector.
     license_value = os.environ.get('RASA_LICENSE', '')
     if not license_value and args.env_file:
         from dotenv import dotenv_values
         license_value = dotenv_values(args.env_file, interpolate=False).get('RASA_LICENSE', '')
     if not license_value:
         raise ValueError('RASA_LICENSE is required, including scripted mode. Obtain a free Rasa Developer Edition license.')
+    voice_key = ''
+    if args.voice:
+        from dotenv import dotenv_values
+        voice_key = (dotenv_values(args.env_file, interpolate=False).get('DEEPGRAM_API_KEY', '') if args.env_file else '')
+        if not voice_key or not voice_key.strip():
+            raise ValueError('Voice needs DEEPGRAM_API_KEY in the owner credential file.')
+    mantle_key = ''
+    mantle_mode = getattr(args, 'mantle_mode', 'SCRIPTED')
+    if mantle_mode == 'LIVE':
+        from dotenv import dotenv_values
+        mantle_key = (dotenv_values(args.env_file, interpolate=False).get('OPENAI_API_KEY', '') if args.env_file else '')
+        if not mantle_key or not mantle_key.strip():
+            raise ValueError('Live Mantle needs OPENAI_API_KEY in the owner credential file.')
     allowed = {'127.0.0.1', host, *args.allow_peer}
     for peer in allowed:
         ipaddress.ip_address(peer)
@@ -92,8 +159,13 @@ def run(args):
     env = {k: os.environ[k] for k in ('PATH', 'HOME', 'LANG') if k in os.environ}
     env.update(RASA_LICENSE=license_value, FACTORY_MCP_TOKEN=secrets.token_urlsafe(32),
                FACTORY_HOST=host, FACTORY_ALLOWED_PEERS=','.join(sorted(allowed)),
+               FACTORY_ENTRY_PORT=str(args.entry_port),
+               FACTORY_INSPECTOR_PORT=str(args.inspector_port),
+               FACTORY_MCP_PORT=str(args.mcp_port),
+               FACTORY_MCP_URL=f'http://127.0.0.1:{args.mcp_port}/mcp',
                FACTORY_VIEWER_NAME=args.viewer_name or host,
                FACTORY_BUILDER_MODE=args.builder_mode,
+               FACTORY_MANTLE_MODE=mantle_mode,
                FACTORY_WORKER_PYTHON=str(Path(args.worker_python).absolute()) if args.builder_mode == 'LIVE' else str(PYTHON),
                FACTORY_ENV_FILE=str(Path(args.env_file).resolve()) if args.env_file else '',
                FACTORY_EVIDENCE_ROOT=str(Path(args.evidence_root).resolve()),
@@ -104,6 +176,7 @@ def run(args):
     # No child reads a dotenv file implicitly. All secrets stay out of logs.
     children = []
     logs = []
+    log_threads = []
     def stop(*_):
         for child in children:
             if child.poll() is None:
@@ -113,7 +186,7 @@ def run(args):
     signal.signal(signal.SIGINT, interrupted)
     signal.signal(signal.SIGTERM, interrupted)
     try:
-        print('Mantle selection SCRIPTED; builder mode ' + args.builder_mode + '; protected gate; no voice qualification.', flush=True)
+        print('Mantle selection ' + mantle_mode + '; builder mode ' + args.builder_mode + '; protected gate; no voice qualification.', flush=True)
         train = subprocess.run([str(PYTHON), '-m', 'rasa', 'train'], cwd=PROJECT, env=env,
                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=180)
         if train.returncode:
@@ -125,11 +198,21 @@ def run(args):
         ]:
             log = open(runtime / (label + '.log'), 'ab')
             logs.append(log)
-            children.append(subprocess.Popen(command, cwd=cwd, env=env, stdout=log,
-                                             stderr=subprocess.STDOUT, start_new_session=True))
-        wait_ready(children[1], f'http://{host}:5007/status')
-        wait_ready(children[2], f'http://{host}:8947/')
-        print(f'READY http://{args.viewer_name or host}:8947/ ; expires {args.expires_at}', flush=True)
+            child_env = dict(env)
+            if label == 'inspector':
+                if voice_key:
+                    child_env['DEEPGRAM_API_KEY'] = voice_key
+                if mantle_key:
+                    child_env['OPENAI_API_KEY'] = mantle_key
+            process = subprocess.Popen(command, cwd=cwd, env=child_env, stdout=subprocess.PIPE,
+                                       stderr=subprocess.STDOUT, start_new_session=True)
+            children.append(process)
+            thread = threading.Thread(target=capture_log, args=(process, log, child_env), daemon=True)
+            log_threads.append(thread)
+            thread.start()
+        wait_ready(children[1], f'http://{host}:{args.inspector_port}/status')
+        wait_ready(children[2], f'http://{host}:{args.entry_port}/')
+        print(f'READY http://{args.viewer_name or host}:{args.entry_port}/ ; expires {args.expires_at}', flush=True)
         while datetime.now(timezone.utc) < expiry:
             if any(child.poll() is not None for child in children):
                 raise RuntimeError('An owned service stopped; closing the demonstration.')
@@ -150,6 +233,8 @@ def run(args):
                 except subprocess.TimeoutExpired:
                     os.killpg(child.pid, signal.SIGKILL)
                     child.wait(timeout=5)
+        for thread in log_threads:
+            thread.join(timeout=5)
         for log in logs:
             log.close()
 
@@ -160,10 +245,15 @@ if __name__ == '__main__':
     else:
         parser = argparse.ArgumentParser(description=__doc__)
         parser.add_argument('command', choices=['run'])
+        parser.add_argument('--voice', action='store_true', help='Enable Deepgram in the Inspector child only.')
         parser.add_argument('--host', default='127.0.0.1')
+        parser.add_argument('--entry-port', type=int, default=8947)
+        parser.add_argument('--inspector-port', type=int, default=5007)
+        parser.add_argument('--mcp-port', type=int, default=8948)
         parser.add_argument('--viewer-name', default='')
         parser.add_argument('--viewer-access', default='')
         parser.add_argument('--allow-peer', action='append', default=[])
+        parser.add_argument('--mantle-mode', type=str.upper, choices=['SCRIPTED', 'LIVE'], default='SCRIPTED', help='LIVE uses the configured OpenAI orchestrator; SCRIPTED keeps the teaching fallback.')
         parser.add_argument('--builder-mode', type=str.upper, choices=['SCRIPTED', 'LIVE'], default='SCRIPTED')
         parser.add_argument('--worker-python', default=str(ROOT / 'worker/.venv/bin/python'))
         parser.add_argument('--evidence-root', default=str(ROOT / '.runtime/factory-evidence'))

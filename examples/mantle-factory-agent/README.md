@@ -72,7 +72,7 @@ NOT_READY means no usable verdict was obtained. It never means ACCEPT, and a liv
 
 ## Voice
 
-Voice was not tested for this agent. In the travel demo, a test with recorded audio did not pass on the second turn, so type your requests.
+Use the opt-in local command below. A patched runtime completed a Deepgram audio-file request and LIVE gate ACCEPT; the physical microphone remains unqualified. Earlier unpatched travel failures remain recorded.
 
 ## Troubleshooting
 
@@ -89,3 +89,51 @@ Voice was not tested for this agent. In the travel demo, a test with recorded au
 2. A builder produces an attempt. In the scripted run it is a prepared one.
 3. Locked acceptance tests judge the attempt in a sandbox with no network. The conversational agent receives only the verdict record.
 4. ACCEPT or REJECT. A verdict is not a release.
+
+For an isolated local review while the class preview is running, choose distinct ports:
+
+```sh
+./demo run --entry-port 8960 --inspector-port 5020 --mcp-port 8961
+```
+
+Open http://127.0.0.1:8960/ for that run. Keep the same license and expiry requirements.
+
+## Voice, locally
+
+From this example directory on your own Mac. Create your own Deepgram API key at https://console.deepgram.com/ (Deepgram offers free starting credit).
+
+```sh
+./demo setup
+# Create an ignored .env containing your RASA_LICENSE and DEEPGRAM_API_KEY.
+./demo run --voice --env-file .env
+```
+
+Open http://127.0.0.1:8947 in Chrome, allow microphone access, and start the voice conversation. Say “show at most three currencies on the market card”. SCRIPTED builder mode demonstrates the protected gate without a model key or funded builder call. The Inspector alone receives the Deepgram key; training, entry and MCP children do not. Text remains available without that key by omitting `--voice`. Voice is opt-in and uses the pinned-engine repair in `voice_patch.py` without editing installed packages.
+
+For the LIVE builder, first run `./demo setup-live`, add OPENAI_API_KEY to the same owner file, then use `./demo run --voice --builder-mode LIVE --env-file .env`. This makes a funded builder attempt; Mantle selection stays SCRIPTED. Only the builder child receives OpenAI credentials. The existing run-count and deadline bounds still apply.
+
+If the ports are occupied, add `--entry-port 8964 --inspector-port 5024 --mcp-port 8965` and use the printed page address. The launcher stops at the printed expiry (default 16:30 UTC today) or Ctrl-C; after that time supply `--expires-at` with a future UTC timestamp. Loopback needs no tailnet, TLS or Chrome flags. Audio-file speech completed a LIVE gate ACCEPT on the patched runtime; physical microphone permission/device behavior must still be checked locally.
+
+## Live Mantle orchestration
+
+To let the actual OpenAI Mantle model interpret free phrasing and choose the factory tool, use an owner `.env` with RASA_LICENSE and OPENAI_API_KEY. The model key is given only to the Inspector's orchestrator and the builder child. Training, MCP and entry environments do not receive it.
+
+```sh
+./demo setup
+./demo setup-live
+./demo run --mantle-mode LIVE --builder-mode LIVE --env-file .env
+```
+
+Ask “Can you limit the market card to three currencies?” and then “Try the version that ignores the limit”. The model chooses one of the closed factory request kinds; it cannot supply code, paths or modes. The first request starts a funded Agents API build followed by the protected gate. The second judges the supplied bad attempt with zero builder calls. Only actual gate results establish ACCEPT or REJECT; nothing is deployed. A build is normally about one to two minutes and up to about 1.50 USD as an estimate, not a spending cap. Failures are reported without an automatic funded retry.
+
+For voice, add DEEPGRAM_API_KEY to the same owner file and `--voice`. Text qualification and physical microphone qualification are separate. The default `--mantle-mode SCRIPTED` remains the teaching fallback.
+
+Each `good` request in LIVE builder mode starts a new funded build, including a repeated request. The one-at-a-time lock and the default limit of 12 funded runs per evidence folder bound these builds. A started run counts even if it fails; the `ignores-limit` request uses no funded build.
+
+## Requalify the voice repair after changing pins
+
+`voice_patch.py` patches private engine names and remains the proven v1. `voice_compat.py` permits only the recorded Rasa Pro/Core pairs: 3.21.0.dev5 with Core 0.35.6 or 0.36.3. A different Rasa Pro or Core version refuses voice startup; the text path remains available. Do not add a pair merely to silence the check.
+
+After either pin moves, run the offline voice-patch regressions in the example's project environment, including EndOfTurn-only text, reconnect and idle silence. Then run real Deepgram file inputs through the Inspector: flight search, “yes that one”, and “six pm tomorrow” for travel; a factory request and its actual protected result for the factory. Record the exact versions, source head, transcripts and result before adding a qualified pair. This proves file speech only; physical microphone/browser permission needs a separate check. No provider call is part of the offline tests.
+
+After a factory call, the reply quotes the validated tool fields: verdict, failing test, attempt fingerprint, builder calls, seconds and mode. Model-authored prose cannot replace that verdict. A failed or malformed result produces NOT_READY without an acceptance claim.

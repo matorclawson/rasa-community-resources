@@ -1370,6 +1370,58 @@ class TestHeroesLayout(unittest.TestCase):
         self.assertEqual(len(found), 1)
         self.assertIn("wave-NN-<theme>", found[0].message)
 
+    def test_installed_dependencies_do_not_become_wave_projects(self):
+        for environment in (".venv", "venv"):
+            with self.subTest(environment=environment), FakeRepo() as repo:
+                self._wave(repo, "wave-01-voice")
+                project = "heroes/wave-01-voice/projects/handle-agent"
+                repo.project(project)
+                environment_root = repo.root / project / environment
+                environment_root.mkdir()
+                (environment_root / "pyvenv.cfg").write_text("home = /python\n")
+                # These are the two installed paths reported by compatibility
+                # after the native project check has populated its environment.
+                for dependency in ("", "pandas/"):
+                    path = repo.root / project / environment / (
+                        f"lib/python3.12/site-packages/{dependency}pyproject.toml"
+                    )
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text("[project]\nname = 'dependency'\n")
+                self.assertEqual(lint_repo.check_heroes_layout(), [])
+
+    def test_authored_environment_names_are_not_hidden(self):
+        for environment in (".venv", "venv"):
+            for parent in ("", "projects/handle-agent/"):
+                with self.subTest(environment=environment, parent=parent), FakeRepo() as repo:
+                    self._wave(repo, "wave-01-voice")
+                    repo.project("heroes/wave-01-voice/projects/handle-agent")
+                    misplaced = f"heroes/wave-01-voice/{parent}{environment}"
+                    repo.project(misplaced)
+                    found = lint_repo.check_heroes_layout()
+                self.assertEqual(len(found), 1)
+                self.assertEqual(found[0].path, f"{misplaced}/pyproject.toml")
+
+    def test_environment_marker_outside_a_project_does_not_hide_a_project(self):
+        with FakeRepo() as repo:
+            self._wave(repo, "wave-01-voice")
+            misplaced = "heroes/wave-01-voice/venv"
+            repo.project(misplaced)
+            (repo.root / misplaced / "pyvenv.cfg").write_text("home = /python\n")
+            found = lint_repo.check_heroes_layout()
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].path, f"{misplaced}/pyproject.toml")
+
+    def test_nested_authored_project_is_still_reported(self):
+        with FakeRepo() as repo:
+            self._wave(repo, "wave-01-voice")
+            project = "heroes/wave-01-voice/projects/handle-agent"
+            repo.project(project)
+            repo.project(f"{project}/nested-agent")
+            found = lint_repo.check_heroes_layout()
+        self.assertEqual(len(found), 1)
+        self.assertIn("nested-agent/pyproject.toml", found[0].path)
+        self.assertIn("skipped by every check", found[0].message)
+
     def test_missing_charter_is_reported(self):
         with FakeRepo() as repo:
             self._wave(repo, "wave-01-voice", charter=False)
@@ -1984,6 +2036,62 @@ class TestBrowserAudioDriver(unittest.TestCase):
         self.assertEqual(voice["heard"], ["card ending four four one seven"])
         self.assertEqual(sorted(server.acked), sorted(server.sent_markers))
         self.assertEqual(voice["markers_pending"], 0)
+
+    def test_tracker_completion_waits_for_expected_reply_audio(self):
+        from types import SimpleNamespace
+
+        tracker = {"events": [{"event": "bot", "text": "old greeting"},
+                              {"event": "user", "text": "hello"},
+                              {"event": "bot", "text": "new reply"},
+                              {"event": "bot_turn_ended"}]}
+        call = self.v.BrowserAudioCall("ws://unused", "synthetic", fetch_tracker=lambda _: tracker,
+                                     settle_s=0.1, turn_timeout_s=1)
+        call.speaker = SimpleNamespace(drained=True)
+        turn = self.v.TurnTimes(speech_off=1, last_server_frame=1)
+        clock = [10.0]
+        def receive_audio(_):
+            clock[0] += 0.05
+            turn.first_audio = clock[0]
+        with mock.patch.object(self.v.time, "monotonic", side_effect=lambda: clock[0]), \
+             mock.patch.object(self.v.time, "sleep", side_effect=receive_audio) as wait:
+            ended, _ = call._wait_bot_turn(turn, 0, 0)
+        self.assertEqual(ended, "tracker")
+        self.assertIsNotNone(turn.first_audio)
+        wait.assert_called_once()
+
+    def test_tracker_text_without_received_audio_times_out(self):
+        from types import SimpleNamespace
+
+        tracker = {"events": [{"event": "user"}, {"event": "bot", "text": "reply"},
+                              {"event": "bot_turn_ended"}]}
+        fetch = mock.Mock(return_value=tracker)
+        call = self.v.BrowserAudioCall("ws://unused", "synthetic", fetch_tracker=fetch,
+                                     settle_s=0.1, turn_timeout_s=0.2)
+        call.speaker = SimpleNamespace(drained=True)
+        turn = self.v.TurnTimes(speech_off=1, last_server_frame=1)
+        clock = [10.0]
+        def advance(seconds):
+            clock[0] += seconds
+        with mock.patch.object(self.v.time, "monotonic", side_effect=lambda: clock[0]), \
+             mock.patch.object(self.v.time, "sleep", side_effect=advance):
+            ended, _ = call._wait_bot_turn(turn, 0, 0)
+        self.assertEqual(ended, "timeout")
+        self.assertIsNone(turn.first_audio)
+        self.assertEqual(fetch.call_count, 2)  # initial poll and final timeout read
+
+    def test_silent_tracker_turn_does_not_wait_for_old_greeting_audio(self):
+        from types import SimpleNamespace
+
+        tracker = {"events": [{"event": "bot", "text": "old greeting"},
+                              {"event": "user"}, {"event": "bot_turn_ended"}]}
+        call = self.v.BrowserAudioCall("ws://unused", "synthetic", fetch_tracker=lambda _: tracker,
+                                     settle_s=0.1, turn_timeout_s=1)
+        call.speaker = SimpleNamespace(drained=True)
+        turn = self.v.TurnTimes(speech_off=1, last_server_frame=1)
+        with mock.patch.object(self.v.time, "monotonic", return_value=10), \
+             mock.patch.object(self.v.time, "sleep", side_effect=AssertionError("silent turn must finish")):
+            ended, _ = call._wait_bot_turn(turn, 0, 0, 1)
+        self.assertEqual(ended, "tracker")
 
     def test_quiet_window_ends_the_turn_without_a_tracker(self):
         server = FakeBrowserAudioServer()
