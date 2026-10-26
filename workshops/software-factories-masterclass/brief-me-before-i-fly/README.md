@@ -1,3 +1,5 @@
+> **Historical extension, not the current workshop entry point.** This folder retains its original prerelease fixtures and results. Start with [the participant guide](../PARTICIPANT-GUIDE.md). `openai-mcp` uses the separate Agents SDK, not the Agents API taught today. Do not upgrade these fixtures or reinterpret their recorded results as 3.21.0 results.
+
 # Brief me before I fly: the Mantle side, graded offline
 
 sow: software-factories-masterclass-SOW-02
@@ -20,7 +22,9 @@ imported from a configured server on loopback; nothing is gated (the briefing on
 instructions keep delay claims to the provider's own status, numbers as they appear in the data, the transfer time as an assumption,
 replayed or delayed data said to be so, missing input asked for, no stale value repeated as current, and the cards said to be zeocore's and ours, not Mantle's.
 
-## Run it (no licence, no key, no network)
+## Run it (no license, no key, no network)
+
+First, once, from the `factory/` folder: `uv sync --frozen`. That creates `factory/.venv`, which the commands below use. It needs the internet for the install and nothing after that.
 
 From this folder, with the pack's pinned interpreter:
 
