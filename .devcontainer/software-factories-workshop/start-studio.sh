@@ -39,6 +39,19 @@ services:
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KC_PROXY_HEADERS: xforwarded
       KC_HTTP_ENABLED: "true"
+    # The upstream health probe fetches /auth/, which now redirects to the forwarded HTTPS address, so the helper exits 1
+    # and Studio's dependent services never start. Same helper and timing, pointed at the realm discovery document,
+    # which answers 200 without a redirect. The health gate is kept, not disabled.
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java /tmp/HealthCheck.java http://localhost:8080/auth/realms/rasa-studio/.well-known/openid-configuration',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
   studio-backend:
     environment:
       API_URL: $(url 4000)/api
