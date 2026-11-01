@@ -4,6 +4,7 @@ A wrapper that does not exist, does not run Python, or does not block a connecti
 produce ACCEPT. Wrappers come from the system PATH. These tests do not defend against a hostile
 administrator replacing system tools.
 """
+import importlib.util
 import os
 from pathlib import Path
 import shutil
@@ -11,6 +12,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import types
 import unittest
 from unittest.mock import patch
 
@@ -71,17 +73,47 @@ class Refusals(unittest.TestCase):
         self.assertIn('could not run', done.stdout)
         self.assertNotIn('ACCEPT', done.stdout)
 
-    def test_run_a6_refuses_an_edited_isolation_module(self):
+    SENTINEL_CODE = "\nfrom pathlib import Path as _P\n_P(__file__).with_name('SENTINEL').write_text('ran')\n"
+
+    def tampered_copy(self):
         copy = self.tmp / 'ch06'
         shutil.copytree(self.pack, copy, ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
         with (copy / 'isolation.py').open('a') as handle:
-            handle.write('\n# edited\n')
+            handle.write(self.SENTINEL_CODE)
+        return copy
+
+    def test_the_sentinel_proves_an_executed_isolation_module_would_be_seen(self):
+        copy = self.tampered_copy()
+        spec = importlib.util.spec_from_file_location('isolation_control', copy / 'isolation.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.assertTrue((copy / 'SENTINEL').exists())
+
+    def test_run_a6_refuses_an_edited_isolation_module_without_executing_it(self):
+        copy = self.tampered_copy()
         done = subprocess.run([sys.executable, '-I', str(copy / 'run_a6.py'),
                                str(copy / 'tasks/b-limit-currencies.json'), 'baseline'],
                               capture_output=True, text=True, timeout=120, cwd=copy,
                               env={'PATH': os.environ.get('PATH', '/usr/bin:/bin'), 'PYTHONDONTWRITEBYTECODE': '1'})
         self.assertEqual(done.returncode, 2, done.stdout + done.stderr)
+        self.assertIn('does not match its pin', done.stdout)
         self.assertNotIn('ACCEPT', done.stdout)
+        self.assertFalse((copy / 'SENTINEL').exists(), 'isolation.py ran before its pin was checked')
+
+    def test_the_gate_refuses_an_edited_isolation_module_without_executing_it(self):
+        copy = self.tampered_copy()
+        with patch.object(factory_gate, '_pack', return_value=copy):
+            result = factory_gate.run_factory('good')
+        self.assertEqual(result['verdict'], 'NOT_READY', result)
+        self.assertFalse((copy / 'SENTINEL').exists(), 'isolation.py ran before its pin was checked')
+
+    def test_live_good_stays_not_ready_on_linux_before_any_funded_run(self):
+        fake_sys = types.SimpleNamespace(platform='linux', executable=sys.executable)
+        with patch.object(factory_gate, 'sys', fake_sys), \
+                patch.object(factory_gate, '_live', side_effect=AssertionError('a funded run was started')):
+            result = factory_gate.run_factory('good', mode='LIVE')
+        self.assertEqual(result['verdict'], 'NOT_READY', result)
+        self.assertIn('not ported', result['reason'])
 
     def test_a_proven_wrapper_exists_here_or_the_gate_says_so(self):
         prefix = self.iso.first_blocking()

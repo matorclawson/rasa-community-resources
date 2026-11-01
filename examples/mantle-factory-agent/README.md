@@ -128,6 +128,8 @@ Ask “Can you limit the market card to three currencies?” and then “Try the
 
 For voice, add DEEPGRAM_API_KEY to the same owner file and `--voice`. Text qualification and physical microphone qualification are separate. The default `--mantle-mode SCRIPTED` remains the teaching fallback.
 
+On Linux, LIVE `good` requests stay NOT_READY and start no funded build: the LIVE path copies the chapter 5 protected check, which is still macOS-only. Only the scripted chapter 6 path runs on Linux.
+
 Each `good` request in LIVE builder mode starts a new funded build, including a repeated request. The one-at-a-time lock and the default limit of 12 funded runs per evidence folder bound these builds. A started run counts even if it fails; the `ignores-limit` request uses no funded build.
 
 ## Requalify the voice repair after changing pins
