@@ -31,6 +31,11 @@ grep -q "$(url 4000)/api" "$dir/webclient/config.js" && grep -q "$(url 8081)/aut
 # down"), so the container exits 2. Run postgres in the foreground and let the official init directory create the
 # keycloak database (POSTGRES_DB already creates studio). This only helps a FIRST boot with a fresh volume: an already
 # initialized volume skips the init directory.
+# The model service runs as the image's non-root user (uid 1001, gid 0) and writes to two bind-mounted folders. If Compose
+# creates them they are owned by root and the service stops with "Permission denied /app/working-data/logs". Create just
+# those two folders and hand them to uid 1001, gid 0. Nothing broader is changed and the service does not run as root.
+mkdir -p "$dir/rasa-pro/enterprise-search-data"
+docker run --rm -v "$dir/rasa-pro:/data" alpine:3.18 chown -R 1001:0 /data
 mkdir -p "$dir/initdb"
 printf 'CREATE DATABASE keycloak;\n' > "$dir/initdb/10-keycloak.sql"
 cat > "$dir/docker-compose.override.yml" <<YAML
