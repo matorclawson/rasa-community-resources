@@ -1,0 +1,22 @@
+// Draft by rasa-ops, Nov 1, 2026, for the Nov 3 workshop. First real run is rasa-bench's. Nothing here has been run in a codespace.
+{
+  "name": "Rasa Studio and Mantle workshop (draft)",
+  "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "hostRequirements": { "cpus": 4, "memory": "8gb", "storage": "32gb" },
+  "forwardPorts": [8080, 8081, 4000, 8000],
+  "portsAttributes": {
+    "8080": { "label": "Studio" },
+    "8081": { "label": "Studio login (Keycloak)" },
+    "4000": { "label": "Studio API" },
+    "8000": { "label": "Model service" }
+  },
+  "secrets": {
+    "RASA_PRO_LICENSE": { "description": "Your Rasa Developer Edition licence key" },
+    "OPENAI_API_KEY": { "description": "Your OpenAI API key" }
+  },
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}/workshops/software-factories-masterclass",
+  "postCreateCommand": "bash .devcontainer/software-factories-workshop/setup.sh"
+}
