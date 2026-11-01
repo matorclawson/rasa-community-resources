@@ -16,7 +16,7 @@
     },
     {
       "path": "isolation.py",
-      "sha256": "4ad5dc86215d2a5e2ad85347e2f1847e77e71e9b8e8a2eb82dbccf66281b3935"
+      "sha256": "3b603913b621e56215b9157eaa3ef488b63ea98e14653d8aa87529ce49adf981"
     }
   ],
   "excluded": "Changing the acceptance suite or its child runner, the card registry, the other cards' readers, the launcher, or anything under zeocore. Those belong to the platform and have a separate owner."
