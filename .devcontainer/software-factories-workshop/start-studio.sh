@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # EXPERIMENTAL, Nov 1, 2026. Still being tested in real codespaces.
 # Starts Studio from RasaHQ/studio-docker-compose. That compose file hardcodes localhost for the Studio API,
-# the web client and the model-service chat address. In a browser codespace those must be the forwarded
-# addresses. The Keycloak address is NOT handled here because no setting for it was found. Expect login problems
-# and report the exact error.
+# the web client's own settings, the model-service chat address and Keycloak's public address. In a browser codespace
+# these must be the forwarded addresses, so this script overrides each one. Report the exact error if login still fails.
 set -euo pipefail
 : "${RASA_LICENSE:?Save RASA_LICENSE as a Codespaces secret scoped to this repository, then restart the codespace}"
 # Mantle reads RASA_LICENSE. The Studio compose file reads RASA_PRO_LICENSE. Same key, mapped here.
@@ -15,7 +14,18 @@ STUDIO_COMPOSE_COMMIT=deb6b8fa0dac6991fdb3584ab3143a04b5de3b6c
 [ -d "$dir" ] || git clone --quiet https://github.com/RasaHQ/studio-docker-compose "$dir"
 git -C "$dir" checkout --quiet "$STUDIO_COMPOSE_COMMIT"
 git -C "$dir" rev-parse HEAD
+export RASA_PRO_LICENSE="$RASA_LICENSE"
 url() { echo "https://${CODESPACE_NAME}-$1.${DOMAIN}"; }
+# The web client serves /usr/share/nginx/html/config.js with the Studio API and Keycloak addresses set to localhost, which
+# points at the attendee's own laptop. Nothing in the service environment rewrites it. Take the image's own file, change
+# only those two addresses, and mount the result read-only. Every other global stays as the image set it.
+mkdir -p "$dir/webclient"
+cd "$dir"
+docker compose -f docker-compose.yml create studio-web-client
+docker cp studio-web-client:/usr/share/nginx/html/config.js "$dir/webclient/config.js"
+sed -i -e "s#http://localhost:4000/api#$(url 4000)/api#" -e "s#http://localhost:8081/auth#$(url 8081)/auth#" "$dir/webclient/config.js"
+grep -q "$(url 4000)/api" "$dir/webclient/config.js" && grep -q "$(url 8081)/auth" "$dir/webclient/config.js" \
+  || { echo "NOT READY: could not set the web client addresses in config.js"; exit 1; }
 # The upstream database command starts postgres in the background, sleeps 5 seconds, then runs psql. On a first boot the
 # official entrypoint's temporary init server shuts down during that window and psql fails ("database system is shutting
 # down"), so the container exits 2. Run postgres in the foreground and let the official init directory create the
@@ -29,6 +39,9 @@ services:
     command: ["postgres"]
     volumes:
       - ./initdb:/docker-entrypoint-initdb.d:ro
+  studio-web-client:
+    volumes:
+      - ./webclient/config.js:/usr/share/nginx/html/config.js:ro
   studio-keycloak:
     environment:
       # Keycloak 26 (hostname v2): the browser-facing issuer and endpoints must be the forwarded address, not localhost.
@@ -62,7 +75,6 @@ services:
       RASA_MODEL_SERVER_BASE_URL: $(url 8000)/talk
 YAML
 cd "$dir"
-export RASA_PRO_LICENSE="$RASA_LICENSE"
 docker compose up -d
 echo "Follow startup with: docker compose -f $dir/docker-compose.yml logs -f startup-helper"
 echo "Studio: $(url 8080)   Login (Keycloak): $(url 8081)/auth/"
