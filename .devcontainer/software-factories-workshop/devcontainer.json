@@ -18,5 +18,5 @@
     "OPENAI_API_KEY": { "description": "Your OpenAI API key" }
   },
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}/workshops/software-factories-masterclass",
-  "postCreateCommand": "bash .devcontainer/software-factories-workshop/setup.sh"
+  "postCreateCommand": "bash \"$(git rev-parse --show-toplevel)/.devcontainer/software-factories-workshop/setup.sh\""
 }
