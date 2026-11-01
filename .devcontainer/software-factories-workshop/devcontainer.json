@@ -12,8 +12,9 @@
     "ghcr.io/devcontainers/features/sshd:1": {}
   },
   "hostRequirements": { "cpus": 4, "memory": "8gb", "storage": "32gb" },
-  "forwardPorts": [8080, 8081, 4000, 8000],
+  "forwardPorts": [5010, 8080, 8081, 4000, 8000],
   "portsAttributes": {
+    "5010": { "label": "Mantle Inspector", "onAutoForward": "silent" },
     "8080": { "label": "Studio" },
     "8081": { "label": "Studio login (Keycloak)" },
     "4000": { "label": "Studio API" },
