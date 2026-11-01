@@ -6,6 +6,7 @@ into the running product.
 """
 import hashlib
 import fcntl
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -26,6 +27,15 @@ def _pack(chapter='ch06'):
         if (candidate / 'run_a6.py').is_file():
             return candidate
     raise FileNotFoundError('Chapter 6 teaching pack is missing')
+
+
+def _isolation():
+    """The pack's own isolation module, loaded from its pinned file."""
+    path = _pack() / 'isolation.py'
+    spec = importlib.util.spec_from_file_location('isolation', path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def _run(arguments, cwd, timeout, *, python=None, key=None):
@@ -173,8 +183,9 @@ def run_factory(request: str, *, mode='SCRIPTED', worker_python=None,
         if max_funded_runs is not None and (type(max_funded_runs) is not int or max_funded_runs < 1):
             result['reason'] = 'Use a positive funded-run limit or leave it unset.'
             return result
-        if shutil.which('sandbox-exec') is None:
-            result['reason'] = 'The protected gate requires macOS sandbox-exec.'
+        if _isolation().first_blocking() is None:
+            result['reason'] = ('The protected gate needs a proven no-network wrapper: '
+                                'macOS sandbox-exec, or Linux unshare or bubblewrap.')
             return result
         if request == 'ignores-limit':
             result['mode'] = 'SCRIPTED'

@@ -6,7 +6,7 @@ Here you run it in scripted mode, which needs no OpenAI key. A live coding build
 
 ## What you need
 
-- A Mac. The locked tests run inside macOS `sandbox-exec`. Without it the factory says NOT_READY and never claims ACCEPT.
+- A machine with a proven no-network wrapper: macOS `sandbox-exec`, or on Linux `unshare` or bubblewrap (see `isolation.py` in the chapter 6 folder). A wrapper counts only after it runs Python and stops a connection to a local listener. Without one the factory says NOT_READY and never claims ACCEPT.
 - Python 3.12 and `uv`. Other Python versions are not supported.
 - This example runs on Rasa Pro 3.21.0.dev5, the same as the travel example in `examples/`. Chapter 0 of the book runs on 3.21.0.
 - For the live run only: your own OpenAI API key. Rasa Mantle has no model of its own, but in this example Mantle's choice of tool is scripted, so the key is used only by the coding builder.
@@ -76,7 +76,7 @@ Use the opt-in local command below. A patched runtime completed a Deepgram audio
 
 ## Troubleshooting
 
-- **NOT_READY, "requires macOS sandbox-exec":** run on a Mac, or pair with someone who has one.
+- **NOT_READY, "needs a proven no-network wrapper":** on Linux, check that `unshare --net` works for your user (or with `sudo -n`), or install `bubblewrap`. Otherwise run on a Mac. The gate never skips the check.
 - **NOT_READY, "could not run to completion":** read the reason in the reply. In the scripted run you can type request 1 again. In the live run, another try can fund another build, so choose the scripted run first. If it repeats, a protected file may have changed: restore it from a fresh clone.
 - **"Port in use":** the demo uses 8947, 5007 and 8948. Another program is using one of them. Stop it only if you know what it is, or wait until it is free.
 - **"License missing":** export `RASA_LICENSE` in the same terminal where you run `./demo run`.

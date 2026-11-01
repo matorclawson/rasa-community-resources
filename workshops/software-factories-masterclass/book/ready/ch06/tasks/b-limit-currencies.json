@@ -8,12 +8,16 @@
   ],
   "acceptance": {
     "path": "acceptance/b_limit_currencies.py",
-    "sha256": "706dc688740775554a6fcd02a9d07ccea671bc5807f00beb6d77f3bfa499a28d"
+    "sha256": "7942a08f4cece77233bb5f9146bc7c2d702aa56a5153d5558dfc025e73cf1667"
   },
   "support": [
     {
       "path": "acceptance/b_child.py",
       "sha256": "395457b808d8c573d4be947acd088cc0324119309df294b177881c8e945dd4be"
+    },
+    {
+      "path": "isolation.py",
+      "sha256": "4ad5dc86215d2a5e2ad85347e2f1847e77e71e9b8e8a2eb82dbccf66281b3935"
     }
   ],
   "excluded": "Changing the acceptance suite or its child runner, the card registry, the other cards' readers, the launcher, or anything under zeocore. Those belong to the platform and have a separate owner."
