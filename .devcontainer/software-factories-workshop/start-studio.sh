@@ -29,6 +29,16 @@ services:
     command: ["postgres"]
     volumes:
       - ./initdb:/docker-entrypoint-initdb.d:ro
+  studio-keycloak:
+    environment:
+      # Keycloak 26 (hostname v2): the browser-facing issuer and endpoints must be the forwarded address, not localhost.
+      # Backchannel requests from the Studio containers (http://keycloak:8080/auth) keep resolving from their own host header.
+      # Candidate from Keycloak's hostname and reverse-proxy docs. NOT run. Whether Studio's backend accepts a token whose
+      # issuer is the public address while it talks to the internal one is unknown.
+      KC_HOSTNAME: $(url 8081)/auth
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HTTP_ENABLED: "true"
   studio-backend:
     environment:
       API_URL: $(url 4000)/api
