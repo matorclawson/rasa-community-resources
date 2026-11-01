@@ -30,8 +30,13 @@ def _pack(chapter='ch06'):
 
 
 def _isolation():
-    """The pack's own isolation module, loaded from its pinned file."""
-    path = _pack() / 'isolation.py'
+    """The pack's own isolation module, executed only if its bytes match the pin in the task file."""
+    pack = _pack()
+    path = pack / 'isolation.py'
+    task = json.loads((pack / 'tasks/b-limit-currencies.json').read_text())
+    pinned = [item['sha256'] for item in task.get('support', []) if item.get('path') == 'isolation.py']
+    if len(pinned) != 1 or hashlib.sha256(path.read_bytes()).hexdigest() != pinned[0]:
+        raise ValueError('isolation.py does not match its pin')
     spec = importlib.util.spec_from_file_location('isolation', path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -182,6 +187,10 @@ def run_factory(request: str, *, mode='SCRIPTED', worker_python=None,
             return result
         if max_funded_runs is not None and (type(max_funded_runs) is not int or max_funded_runs < 1):
             result['reason'] = 'Use a positive funded-run limit or leave it unset.'
+            return result
+        if mode == 'LIVE' and request == 'good' and sys.platform != 'darwin':
+            result['reason'] = ('LIVE builds use the chapter 5 protected path, which is not ported to Linux. '
+                                'No funded run was started.')
             return result
         if _isolation().first_blocking() is None:
             result['reason'] = ('The protected gate needs a proven no-network wrapper: '
