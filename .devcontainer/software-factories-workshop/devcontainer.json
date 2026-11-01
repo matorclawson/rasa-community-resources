@@ -14,7 +14,7 @@
     "8000": { "label": "Model service" }
   },
   "secrets": {
-    "RASA_PRO_LICENSE": { "description": "Your Rasa Developer Edition licence key" },
+    "RASA_LICENSE": { "description": "Your Rasa Developer Edition licence key" },
     "OPENAI_API_KEY": { "description": "Your OpenAI API key" }
   },
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}/workshops/software-factories-masterclass",

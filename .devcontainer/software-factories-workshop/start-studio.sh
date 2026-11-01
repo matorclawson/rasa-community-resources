@@ -5,7 +5,8 @@
 # addresses. The Keycloak address is NOT handled here because no setting for it was found. Expect login problems
 # and report the exact error.
 set -euo pipefail
-: "${RASA_PRO_LICENSE:?Save RASA_PRO_LICENSE as a Codespaces secret scoped to this repository, then restart the codespace}"
+: "${RASA_LICENSE:?Save RASA_LICENSE as a Codespaces secret scoped to this repository, then restart the codespace}"
+# Mantle reads RASA_LICENSE. The Studio compose file reads RASA_PRO_LICENSE. Same key, mapped here.
 : "${CODESPACE_NAME:?This script is for a codespace}"
 DOMAIN="${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-app.github.dev}"
 dir="$HOME/studio-docker-compose"
@@ -23,7 +24,7 @@ services:
       RASA_MODEL_SERVER_BASE_URL: $(url 8000)/talk
 YAML
 cd "$dir"
-export RASA_PRO_LICENSE
+export RASA_PRO_LICENSE="$RASA_LICENSE"
 docker compose up -d
 echo "Follow startup with: docker compose -f $dir/docker-compose.yml logs -f startup-helper"
 echo "Studio: $(url 8080)   Login (Keycloak): $(url 8081)/auth/"
