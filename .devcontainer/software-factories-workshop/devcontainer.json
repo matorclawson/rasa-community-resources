@@ -21,7 +21,8 @@
   },
   "secrets": {
     "RASA_LICENSE": { "description": "Your Rasa Developer Edition licence key" },
-    "OPENAI_API_KEY": { "description": "Your OpenAI API key" }
+    "OPENAI_API_KEY": { "description": "Your OpenAI API key" },
+    "RASA_STUDIO_LICENSE": { "description": "Presenter only: a Rasa licence with a Studio entitlement" }
   },
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}/workshops/software-factories-masterclass",
   "postCreateCommand": "bash \"$(git rev-parse --show-toplevel)/.devcontainer/software-factories-workshop/setup.sh\""

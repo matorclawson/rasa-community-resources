@@ -4,8 +4,9 @@
 # the web client's own settings, the model-service chat address and Keycloak's public address. In a browser codespace
 # these must be the forwarded addresses, so this script overrides each one. Report the exact error if login still fails.
 set -euo pipefail
-: "${RASA_LICENSE:?Save RASA_LICENSE as a Codespaces secret scoped to this repository, then restart the codespace}"
-# Mantle reads RASA_LICENSE. The Studio compose file reads RASA_PRO_LICENSE. Same key, mapped here.
+: "${RASA_STUDIO_LICENSE:?Save RASA_STUDIO_LICENSE as a Codespaces secret scoped to this repository, then restart the codespace}"
+# Studio needs a licence with a Studio entitlement, which the free Developer Edition key did not carry in testing. Mantle
+# keeps reading RASA_LICENSE. The Studio compose file reads RASA_PRO_LICENSE, which is set here from RASA_STUDIO_LICENSE.
 : "${CODESPACE_NAME:?This script is for a codespace}"
 DOMAIN="${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-app.github.dev}"
 dir="$HOME/studio-docker-compose"
@@ -14,7 +15,7 @@ STUDIO_COMPOSE_COMMIT=deb6b8fa0dac6991fdb3584ab3143a04b5de3b6c
 [ -d "$dir" ] || git clone --quiet https://github.com/RasaHQ/studio-docker-compose "$dir"
 git -C "$dir" checkout --quiet "$STUDIO_COMPOSE_COMMIT"
 git -C "$dir" rev-parse HEAD
-export RASA_PRO_LICENSE="$RASA_LICENSE"
+export RASA_PRO_LICENSE="$RASA_STUDIO_LICENSE"
 url() { echo "https://${CODESPACE_NAME}-$1.${DOMAIN}"; }
 # The web client serves /usr/share/nginx/html/config.js with the Studio API and Keycloak addresses set to localhost, which
 # points at the attendee's own laptop. Nothing in the service environment rewrites it. Take the image's own file, change
