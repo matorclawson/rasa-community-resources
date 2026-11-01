@@ -48,6 +48,17 @@ services:
   studio-web-client:
     volumes:
       - ./webclient/config.js:/usr/share/nginx/html/config.js:ro
+  model-service:
+    # The upstream model health budget (30s start, 5 retries) was shorter than a loaded 8-core start: the model became
+    # healthy about two minutes after launch, but the launcher gave up at 123s. Same check, longer budget. The gate stays.
+    environment:
+      RASA_MODEL_SERVER_BASE_URL: $(url 8000)/talk
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 90s
   studio-keycloak:
     environment:
       # Keycloak 26 (hostname v2): the browser-facing issuer and endpoints must be the forwarded address, not localhost.
@@ -76,9 +87,6 @@ services:
     environment:
       API_URL: $(url 4000)/api
       WEB_CLIENT_URL: $(url 8080)
-  model-service:
-    environment:
-      RASA_MODEL_SERVER_BASE_URL: $(url 8000)/talk
 YAML
 cd "$dir"
 docker compose up -d
