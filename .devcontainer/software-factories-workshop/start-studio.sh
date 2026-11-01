@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# EXPERIMENTAL, rasa-ops, Nov 1, 2026. Not yet run in a codespace.
+# EXPERIMENTAL, Nov 1, 2026. Still being tested in real codespaces.
 # Starts Studio from RasaHQ/studio-docker-compose. That compose file hardcodes localhost for the Studio API,
 # the web client and the model-service chat address. In a browser codespace those must be the forwarded
 # addresses. The Keycloak address is NOT handled here because no setting for it was found. Expect login problems
@@ -10,7 +10,7 @@ set -euo pipefail
 : "${CODESPACE_NAME:?This script is for a codespace}"
 DOMAIN="${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-app.github.dev}"
 dir="$HOME/studio-docker-compose"
-# Pinned to the commit rasa-bench tested (Studio 1.15.2 and rasa/rasa-pro 3.15.8 from its .env), so a run is repeatable.
+# Pinned to the commit tested in a first run (Studio 1.15.2 and rasa/rasa-pro 3.15.8 from its .env), so a run is repeatable.
 STUDIO_COMPOSE_COMMIT=deb6b8fa0dac6991fdb3584ab3143a04b5de3b6c
 [ -d "$dir" ] || git clone --quiet https://github.com/RasaHQ/studio-docker-compose "$dir"
 git -C "$dir" checkout --quiet "$STUDIO_COMPOSE_COMMIT"

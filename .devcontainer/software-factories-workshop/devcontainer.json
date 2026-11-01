@@ -1,8 +1,8 @@
-// Draft by rasa-ops, Nov 1, 2026, for the Nov 3 workshop. First real run is rasa-bench's. Nothing here has been run in a codespace.
+// Draft, Nov 1, 2026, for the Nov 3 workshop. Still being tested in real codespaces.
 {
   "name": "Rasa Studio and Mantle workshop (draft)",
   // The python image carries a Yarn apt source whose signing key fails apt update (NO_PUBKEY 62D54FD4003F6525), which
-  // broke the docker-in-docker feature in rasa-bench's cold4 run. The base image has no Yarn source (not yet confirmed
+  // broke the docker-in-docker feature in a first test run. The base image has no Yarn source (not yet confirmed
   // by a run), and Python comes from the python feature. Package signature checks stay on.
   "image": "mcr.microsoft.com/devcontainers/base:bookworm",
   "features": {
