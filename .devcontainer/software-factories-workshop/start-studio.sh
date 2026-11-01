@@ -10,11 +10,25 @@ set -euo pipefail
 : "${CODESPACE_NAME:?This script is for a codespace}"
 DOMAIN="${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-app.github.dev}"
 dir="$HOME/studio-docker-compose"
-[ -d "$dir" ] || git clone --depth 1 https://github.com/RasaHQ/studio-docker-compose "$dir"
+# Pinned to the commit rasa-bench tested (Studio 1.15.2 and rasa/rasa-pro 3.15.8 from its .env), so a run is repeatable.
+STUDIO_COMPOSE_COMMIT=deb6b8fa0dac6991fdb3584ab3143a04b5de3b6c
+[ -d "$dir" ] || git clone --quiet https://github.com/RasaHQ/studio-docker-compose "$dir"
+git -C "$dir" checkout --quiet "$STUDIO_COMPOSE_COMMIT"
 git -C "$dir" rev-parse HEAD
 url() { echo "https://${CODESPACE_NAME}-$1.${DOMAIN}"; }
+# The upstream database command starts postgres in the background, sleeps 5 seconds, then runs psql. On a first boot the
+# official entrypoint's temporary init server shuts down during that window and psql fails ("database system is shutting
+# down"), so the container exits 2. Run postgres in the foreground and let the official init directory create the
+# keycloak database (POSTGRES_DB already creates studio). This only helps a FIRST boot with a fresh volume: an already
+# initialized volume skips the init directory.
+mkdir -p "$dir/initdb"
+printf 'CREATE DATABASE keycloak;\n' > "$dir/initdb/10-keycloak.sql"
 cat > "$dir/docker-compose.override.yml" <<YAML
 services:
+  database:
+    command: ["postgres"]
+    volumes:
+      - ./initdb:/docker-entrypoint-initdb.d:ro
   studio-backend:
     environment:
       API_URL: $(url 4000)/api
