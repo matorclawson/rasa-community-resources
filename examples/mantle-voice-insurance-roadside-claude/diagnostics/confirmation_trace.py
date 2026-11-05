@@ -12,7 +12,7 @@ from pathlib import Path
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--project', type=Path, default=Path(__file__).resolve().parent.parent)
-parser.add_argument('--tests', choices=['full', 'drop_location', 'drop_service', 'drop_tag'],
+parser.add_argument('--tests', choices=['full', 'drop_location', 'drop_service', 'drop_tag', 'drop_answer'],
                     help='Run the guard suite with one in-process diagnostic mutation; failing tests exit1.')
 args = parser.parse_args()
 project = args.project.resolve()
@@ -38,7 +38,7 @@ def confirmation(service, draft, answered=True):
 
 original_guard = hc._location_confirmed
 original_source = inspect.getsource(original_guard)
-mutations = {'full': None, 'drop_location': 1, 'drop_service': 2, 'drop_tag': 0}
+mutations = {'full': None, 'drop_location': 1, 'drop_service': 2, 'drop_tag': 0, 'drop_answer': 3}
 
 def guard_for(name):
     if name == 'full': return original_guard
@@ -92,7 +92,7 @@ for mutation in mutations:
                   'service_in_question': labels['service'] in question,
                   'answered': conversation.confirmation_answered}
         dispatch = hc.request_dispatch(service, draft.draft_id, memory, conversation)
-        rows.append({'mutation':mutation, 'history':name, 'update_status':None if update is None else update['status'],
+        rows.append({'mutation':mutation, 'history':name, 'confirmation_question':question, 'update_status':None if update is None else update['status'],
                      'before':before, 'after':after, 'draft_unchanged':before == after, 'checks':checks,
                      'result_status':dispatch['status'], 'reason':dispatch.get('reason'),
                      'dispatch_count':len(service.dispatches), 'dispatch_records':service.dispatches})

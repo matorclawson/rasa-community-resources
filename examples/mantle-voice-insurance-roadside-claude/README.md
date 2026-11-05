@@ -418,7 +418,7 @@ python3 -B diagnostics/confirmation_trace.py
 ```
 
 The full suite contains 36 tests. The JSON trace runs six constructed histories
-against the full guard and three diagnostic variants. Each variant omits one
+against the full guard and four diagnostic variants. Each variant omits one
 clause from `_location_confirmed` in that Python process only. No source file
 or running server is changed. The controls include a confirmed draft, an
 unanswered question and deliberately mismatched memory; the last is a test
@@ -430,6 +430,7 @@ To check whether the guard suite detects an omitted clause:
 python3 -B diagnostics/confirmation_trace.py --tests drop_location
 python3 -B diagnostics/confirmation_trace.py --tests drop_service
 python3 -B diagnostics/confirmation_trace.py --tests drop_tag
+python3 -B diagnostics/confirmation_trace.py --tests drop_answer
 ```
 
 Each command deliberately runs a diagnostic mutant and should fail one of the
@@ -439,7 +440,7 @@ or keep a mutated guard. A detected mutant establishes only that these tests
 notice this particular change.
 
 At main revision `38d6e157881c1a97252229c88026c1e67b730b40`, before the two
-new independent controls, the 24 guard tests detected the location omission
+new independent controls, the 24 guard tests detected the location and caller-answer omissions
 but passed with either the service or draft-tag clause omitted. The new
 service test holds the current memory version and place while the question
 still names the old service. The tag test holds the question's place, service
