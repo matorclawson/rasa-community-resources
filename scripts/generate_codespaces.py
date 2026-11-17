@@ -401,6 +401,8 @@ def readme_block(entry: dict, depth: int) -> str:
                   else "upload the unopened Premier ZIP into `vendor-inputs/`")
         if name == "jack-henry-silverlake":
             inputs = "run `make` for help, then `make doctor`; follow its instructions, run `make download`, and repeat `make doctor` until it says ready"
+        if name == "fiserv-premier-11.0.0-prm":
+            inputs = "run `make` for help, upload the unopened Premier ZIP into `vendor-inputs/`, then run `make doctor` and follow its named instructions until it says ready"
         return "\n".join([
             START,
             f"[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)]({launch_url(entry)})",

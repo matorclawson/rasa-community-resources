@@ -104,7 +104,7 @@ Follow these steps in order. Each step has a checkpoint so you know when to cont
 
 - **Before starting:** save `RASA_LICENSE`, `OPENAI_API_KEY`, and `DEEPGRAM_API_KEY` as personal Codespaces secrets. [Get the keys](https://rasa.community/keys/) and follow [the walkthrough](#walkthrough).
 - **Use this badge:** it selects this example's development environment.
-- **After the setup log says `READY`:** upload the unopened Premier ZIP into `vendor-inputs/`, then run `make run`.
+- **After the setup log says `READY`:** run `make` for help, upload the unopened Premier ZIP into `vendor-inputs/`, then run `make doctor` and follow its named instructions until it says ready, then run `make run`.
 - **Open the assistant:** wait for `Rasa server is up and running`, then follow the printed Inspector link. The server uses port `5005`.
 <!-- codespaces:end -->
 
@@ -153,6 +153,21 @@ vendor-inputs/BankingHub_Premier_api_specs.zip
 ```
 
 **Checkpoint:** you can see the ZIP inside `fiserv-premier-11.0.0-prm` → `vendor-inputs` in the Explorer. Upload the ZIP itself, not its extracted contents, and do not place it in a `vendor-inputs` folder at the repository root.
+
+### Check the environment and settings
+
+Plain `make` prints help and starts no service. `make setup` installs this folder's locked environment; repeating it reuses `.venv` and preserves vendor files and transfer journals. If an existing environment is incomplete, linked or uses another Python version, setup refuses to replace it. Preserve that folder and open a fresh badge-selected Codespace.
+
+After uploading the ZIP, run:
+
+```bash
+make setup
+make doctor
+```
+
+Doctor prints only the three setting names as SET or MISSING, checks the local vendor contract using the existing compatibility rules, and compares installed Rasa with this folder's `uv.lock`. SET means present, not verified with a provider. It makes no provider request and creates no transfer journal. Follow the acquisition links for missing keys, save them as personal Codespaces secrets with repository access, then stop and restart the Codespace. Upload the correct unopened Premier ZIP if its check fails; do not substitute another product's definitions or bypass a changed-operation refusal.
+
+**Checkpoint:** doctor says ready. The assistant is still stopped. If startup later fails, preserve the transfer journal and inspect an uncertain original transfer before retrying it.
 
 ### 6. Start the assistant
 

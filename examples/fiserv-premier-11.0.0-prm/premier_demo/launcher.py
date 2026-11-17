@@ -15,8 +15,8 @@ from urllib.parse import urlencode
 from .client import PremierClient  # noqa: F401  (imported to fail early if broken)
 from .contract import TESTED_WITH, ContractError, MissingContractInput, PremierContract, VendorChanged
 from .demo_data import choose_seed, seed_line
+from .startup import failure_hint, locked_rasa
 
-EXPECTED_RASA = "3.21.0.dev5"
 SECRETS = ("RASA_LICENSE", "OPENAI_API_KEY", "DEEPGRAM_API_KEY")
 
 
@@ -109,7 +109,7 @@ def main(project):
               + ". The Fiserv mock needs no Fiserv secrets.")
         return 2
     from importlib.metadata import version
-    if version("rasa-pro") != EXPECTED_RASA:
+    if version("rasa-pro") != locked_rasa(project):
         print("Not ready. Rebuild the locked project environment; the runtime pin differs.")
         return 2
     from rasa.mantle.model_archive.snapshot import package_model_archive
@@ -182,10 +182,10 @@ def main(project):
             return 0 if stopped_by_the_caller() else inspector.returncode
     except KeyboardInterrupt:
         return 0
-    except Exception:
+    except Exception as error:
         if stopped_by_the_caller():
             return 0
-        print("Not ready. An owned service failed; no secret or raw service error is shown.")
+        print(failure_hint(error))
         return 1
     finally:
         for child in (inspector, server):
