@@ -165,6 +165,8 @@ make setup
 make doctor
 ```
 
+Doctor first inspects the existing `.venv`; if it is absent or incompatible, it refuses without installing anything and explains `make setup`. Doctor and run use the checked `.venv/bin/python` directly, so they cannot implicitly sync or repair an environment.
+
 Doctor prints only the three setting names as SET or MISSING, checks the local vendor contract using the existing compatibility rules, and compares installed Rasa with this folder's `uv.lock`. SET means present, not verified with a provider. It makes no provider request and creates no transfer journal. Follow the acquisition links for missing keys, save them as personal Codespaces secrets with repository access, then stop and restart the Codespace. Upload the correct unopened Premier ZIP if its check fails; do not substitute another product's definitions or bypass a changed-operation refusal.
 
 **Checkpoint:** doctor says ready. The assistant is still stopped. If startup later fails, preserve the transfer journal and inspect an uncertain original transfer before retrying it.

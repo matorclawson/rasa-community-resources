@@ -129,23 +129,43 @@ class SetupTests(unittest.TestCase):
 
 
 class MakeBoundaryTests(unittest.TestCase):
-    def test_default_is_help_without_uv_and_doctor_failure_prevents_launch(self):
-        project = Path(__file__).resolve().parents[1]
+    def project(self, root):
+        source = Path(__file__).resolve().parents[1]
+        for name in ('Makefile', 'setup_environment.py'):
+            (root / name).write_bytes((source / name).read_bytes())
+
+    def test_default_is_help_and_missing_environment_doctor_creates_nothing(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            calls = root / "calls"
-            uv = root / "uv"
-            uv.write_text('#!/bin/sh\nprintf "%s\\n" "$*" >> "$STARTUP_CALLS"\nexit 1\n')
+            self.project(root)
+            before = sorted(p.name for p in root.iterdir())
+            result = subprocess.run(['make'], cwd=root, capture_output=True, text=True, timeout=5)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn('make doctor', result.stdout)
+            result = subprocess.run(['make', 'doctor'], cwd=root, capture_output=True, text=True, timeout=5)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('make setup', result.stdout)
+            self.assertFalse((root / '.venv').exists())
+            self.assertEqual(sorted(p.name for p in root.iterdir()), before)
+
+    def test_checked_environment_doctor_failure_prevents_launch_without_uv(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.project(root)
+            calls = root / 'calls'
+            (root / '.venv/bin').mkdir(parents=True)
+            (root / '.venv/pyvenv.cfg').write_text('version = 3.12.11\n')
+            python = root / '.venv/bin/python'
+            python.write_text('#!/bin/sh\nprintf "%s\\n" "$*" >> "$STARTUP_CALLS"\nexit 1\n')
+            python.chmod(0o755)
+            uv = root / 'uv'
+            uv.write_text('#!/bin/sh\necho unexpected-uv >> "$STARTUP_CALLS"\nexit 9\n')
             uv.chmod(0o755)
-            environ = dict(os.environ, PATH=str(root) + os.pathsep + os.environ["PATH"], STARTUP_CALLS=str(calls))
-            help_result = subprocess.run(["make"], cwd=project, env=environ, capture_output=True, text=True)
-            self.assertEqual(help_result.returncode, 0, help_result.stderr)
-            self.assertIn("make doctor", help_result.stdout)
-            self.assertFalse(calls.exists())
-            run_result = subprocess.run(["make", "run"], cwd=project, env=environ, capture_output=True, text=True)
-            self.assertNotEqual(run_result.returncode, 0)
-            self.assertEqual(calls.read_text().splitlines(), ["run --locked python -m premier_demo.startup doctor"])
+            environ = dict(os.environ, PATH=str(root)+os.pathsep+os.environ['PATH'], STARTUP_CALLS=str(calls))
+            result = subprocess.run(['make', 'run'], cwd=root, env=environ, capture_output=True, text=True, timeout=5)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(calls.read_text().splitlines(), ['-B -m premier_demo.startup doctor'])
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

@@ -15,10 +15,11 @@ setup:
 	python3 setup_environment.py
 
 doctor:
-	uv run --locked python -m premier_demo.startup doctor
+	@python3 setup_environment.py --check
+	.venv/bin/python -B -m premier_demo.startup doctor
 
 run: doctor
-	uv run --locked python run_demo.py --port 5005
+	.venv/bin/python -B run_demo.py --port 5005
 
 test:
 	uv run --locked --group models python -m unittest discover -s tests -v
