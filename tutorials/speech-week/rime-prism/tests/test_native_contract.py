@@ -1,5 +1,7 @@
 """Actual rc1 engine factory/config checks; never connect to a provider."""
 import unittest
+from pathlib import Path
+from rasa.mantle.config.channels import load_integration_speech_inputs
 from rasa.core.channels.voice_stream.audio_bytes import L16_16KHZ
 from rasa.core.channels.voice_stream.speech_model.factory import speech_model_from_config
 from rasa.core.channels.voice_stream.speech_model.rime_prism import RimePrismConfig, RimePrismEngine
@@ -8,6 +10,12 @@ from pydantic import ValidationError
 
 
 class PrismContract(unittest.TestCase):
+    def test_companion_file_selects_native_prism_not_a_synthesis_group(self):
+        channels, _ = load_integration_speech_inputs(Path.cwd())
+        config = channels["inspector"]["speech_model"]
+        self.assertEqual(config["name"], "rime_prism")
+        self.assertIsInstance(speech_model_from_config(config, L16_16KHZ), RimePrismEngine)
+
     def test_native_prism_factory_builds_speech_model_without_connecting(self):
         engine = speech_model_from_config({"name": "rime_prism", "voice": "aurora",
             "instructions": "Use fictional library hours from the background assistant."}, L16_16KHZ)

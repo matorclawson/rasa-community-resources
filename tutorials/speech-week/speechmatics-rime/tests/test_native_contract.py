@@ -1,5 +1,7 @@
 """Actual rc1 model-group mapper checks; no SDK network or credentials."""
 import unittest
+from pathlib import Path
+from rasa.mantle.config.channels import load_integration_speech_inputs
 from rasa.mantle.config.speech_model_group import resolve_speech_model_group
 from rasa.shared.exceptions import InvalidConfigException
 
@@ -11,6 +13,13 @@ def groups(**extra):
 
 
 class SpeechmaticsContract(unittest.TestCase):
+    def test_companion_file_resolves_two_explicit_native_provider_groups(self):
+        channels, configured = load_integration_speech_inputs(Path.cwd())
+        self.assertEqual(resolve_speech_model_group(channels["inspector"]["asr"], configured,
+                                                  slot="asr")["provider"], "speechmatics")
+        self.assertEqual(resolve_speech_model_group(channels["inspector"]["tts"], configured,
+                                                  slot="tts")["provider"], "rime")
+
     def test_native_agent_stt_group_resolves_without_old_router(self):
         config = resolve_speech_model_group("input", groups(), slot="asr")
         self.assertEqual(config["provider"], "speechmatics")
