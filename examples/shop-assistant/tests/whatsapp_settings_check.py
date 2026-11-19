@@ -6,7 +6,7 @@ from shop_demo.whatsapp_settings import Settings, ConfigurationError
 class ConfigurationTests(unittest.TestCase):
     def setUp(self):
         self.values = {"TWILIO_ACCOUNT_SID": "AC" + "1" * 32,
-                       "TWILIO_API_KEY_SECRET": "offline-account-token",
+                       "TWILIO_AUTH_TOKEN": "offline-account-token",
                        "SHOP_WHATSAPP_CUSTOMER": "+15555550101", "SHOP_SHEET_ID": "a" * 25,
                        "GOOGLE_TOKEN_JSON": "offline-google", "OPENAI_API_KEY": "offline-model",
                        "RASA_PRO_LICENSE": "offline-license", "CODESPACE_NAME": "offline-venue"}
@@ -33,6 +33,12 @@ class ConfigurationTests(unittest.TestCase):
         self.assertNotIn("TWILIO_API_KEY_SID", self.values)
         self.assertNotIn("TWILIO_WHATSAPP_FROM", self.values)
         Settings.environment(self.values)
+
+    def test_legacy_api_key_secret_cannot_replace_account_auth_token(self):
+        del self.values["TWILIO_AUTH_TOKEN"]
+        self.values["TWILIO_API_KEY_SECRET"] = "offline-key-secret"
+        with self.assertRaisesRegex(ConfigurationError, "TWILIO_AUTH_TOKEN"):
+            Settings.environment(self.values)
 
     def test_missing_settings_error_contains_names_only(self):
         del self.values["GOOGLE_TOKEN_JSON"]

@@ -16,7 +16,7 @@ class Settings:
     @classmethod
     def environment(cls, values=None):
         values = os.environ if values is None else values
-        names = ("TWILIO_ACCOUNT_SID", "TWILIO_API_KEY_SECRET", "SHOP_WHATSAPP_CUSTOMER",
+        names = ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "SHOP_WHATSAPP_CUSTOMER",
                  "SHOP_SHEET_ID", "GOOGLE_TOKEN_JSON", "OPENAI_API_KEY", "RASA_PRO_LICENSE", "CODESPACE_NAME")
         missing = [name for name in names if not values.get(name)]
         if missing:
@@ -31,9 +31,9 @@ class Settings:
             raise ConfigurationError("Invalid SHOP_SHEET_ID")
         instance = cls()
         instance.account_sid = values["TWILIO_ACCOUNT_SID"]
-        # The operator explicitly assigns this misleading historical name to
-        # the MAIN account Auth Token. It is not an API-key authentication mode.
-        instance.auth_token = SecretStr(values["TWILIO_API_KEY_SECRET"])
+        # The corrected operator input is the account Auth Token. Never fall
+        # back to the historical API-key-secret name for signature validation.
+        instance.auth_token = SecretStr(values["TWILIO_AUTH_TOKEN"])
         instance.customer = values["SHOP_WHATSAPP_CUSTOMER"]
         # Public shared sender documented at https://www.twilio.com/docs/whatsapp/sandbox
         instance.sender = "+14155238886"
