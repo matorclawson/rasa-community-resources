@@ -115,7 +115,7 @@ async def conversation(directory, clips):
         try:
             await client.connect("http://127.0.0.1:5005", socketio_path="inspector.io",
                                  transports=["websocket"], wait_timeout=15)
-            await client.emit("session_request", {"session_id": "silverlake-deepgram-voice-once-v1",
+            await client.emit("session_request", {"session_id": directory.name.removeprefix("rasa-"),
                                                    "is_voice": True})
             await asyncio.wait_for(confirmed.wait(), 15)
             await asyncio.sleep(3)
@@ -128,10 +128,11 @@ async def conversation(directory, clips):
                 for offset in range(0, len(pcm), 1024):
                     await client.emit("user_message", {"audio": base64.b64encode(pcm[offset:offset + 1024]).decode()})
                     await asyncio.sleep(len(pcm[offset:offset + 1024]) / 32000)
-                for _ in range(32):
+                # Browser microphones keep sending samples while the caller is quiet.
+                # Preserve that PCM silence instead of leaving a 20-second wire gap.
+                for _ in range(656):
                     await client.emit("user_message", {"audio": base64.b64encode(bytes(1024)).decode()})
                     await asyncio.sleep(.032)
-                await asyncio.sleep(20)
                 await asyncio.sleep(max(0, playback_until - time.monotonic()))
             if ack_tasks:
                 await asyncio.gather(*ack_tasks, return_exceptions=True)
@@ -146,6 +147,7 @@ async def conversation(directory, clips):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--state-dir", type=Path, required=True)
+    parser.add_argument("--caller-clips", type=Path, help="Reuse four original synthetic WAVs without another TTS request")
     args = parser.parse_args()
     if not args.state_dir.is_absolute():
         parser.error("state-dir must be absolute")
@@ -166,7 +168,18 @@ def main():
     process = None
     log = (args.state_dir / "server.log").open("wb")
     try:
-        clips = asyncio.run(synthesize(args.state_dir))
+        if args.caller_clips:
+            clips = []
+            for index in range(1, 5):
+                original = args.caller_clips / f"caller-{index}.wav"
+                with wave.open(str(original), "rb") as source:
+                    if (source.getnchannels(), source.getsampwidth(), source.getframerate()) != (1, 2, 16000):
+                        raise ValueError("caller_fixture_format_changed")
+                    clips.append(source.readframes(source.getnframes()))
+                (args.state_dir / original.name).write_bytes(original.read_bytes())
+            result["caller_clip_source"] = str(args.caller_clips)
+        else:
+            clips = asyncio.run(synthesize(args.state_dir))
         environment = dict(os.environ, LITELLM_LOCAL_MODEL_COST_MAP="True", RASA_TELEMETRY_ENABLED="false",
                            DEMO_SEED="295185", SILVERLAKE_JOURNAL_DIR=str(args.state_dir / "journal"))
         process = subprocess.Popen([sys.executable, "run_demo.py", "--port", "5005"], cwd=here,
