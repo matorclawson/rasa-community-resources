@@ -33,3 +33,13 @@ completed banking conversation. No recording result is asserted in this draft.
 The reused host checks the grant again after the review is delivered and again at
 confirmation. Existing guard tests give offline boundary examples; this new rc1
 profile still needs its own native run, actual audio and check-removed proof.
+
+## Current release-candidate blocker
+
+The full Inspector startup is blocked on rc1: Mantle fills default Deepgram ASR
+and TTS settings even when this profile selects native Rime Prism. Inspector
+then correctly refuses both media modes. A trial Inspector subclass was also
+rejected because rc1 custom channels must use its published API contract; that
+trial is reverted. No installed wheel, channel validation or bank guard is patched.
+The native engine checks pass, but they do not establish full voice readiness.
+The REST-only developer check disables Inspector and does not test speech.
