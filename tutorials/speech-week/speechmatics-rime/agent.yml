@@ -10,3 +10,5 @@ description: A fictional opening-hours task for matched speech-provider trials.
 rules:
   - Use a tool result for opening hours; distinguish weekday from Saturday.
   - Keep the final answer to one sentence unless the caller asks for detail.
+orchestrator:
+  model_group: dialogue
