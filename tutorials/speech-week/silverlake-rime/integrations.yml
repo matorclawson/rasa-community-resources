@@ -7,7 +7,7 @@ model_groups:
 channels:
   rest:
     enabled: true
-  inspector:
+  rime_channel.RimeOnlyInspector:
     enabled: true
     sample_rate: 16000
     speech_model:

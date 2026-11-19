@@ -33,3 +33,14 @@ completed banking conversation. No recording result is asserted in this draft.
 The reused host checks the grant again after the review is delivered and again at
 confirmation. Existing guard tests give offline boundary examples; this new rc1
 profile still needs its own native run, actual audio and check-removed proof.
+
+## Release-candidate channel workaround
+
+The rc1 Mantle resolver inserts Inspector's default Deepgram speech settings even
+when this profile selects a native Rime speech model. The built-in Inspector then
+refuses both media modes. `rime_channel.RimeOnlyInspector` removes only those
+exact built-in defaults before passing the configuration to the native Inspector.
+It refuses another configured speech engine. It never calls Deepgram and does not
+patch the installed wheel or change the transfer guard. The full native channel
+resolver is exercised in this profile's tests. Remove this adapter after the
+upstream resolver is fixed and that removal has passed a fresh native run.

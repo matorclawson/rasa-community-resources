@@ -20,7 +20,7 @@ def prepare(destination):
         target = destination / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes((BANK / relative).read_bytes())
-    for name in ("agent.yml", "integrations.yml", "pyproject.toml", "uv.lock"):
+    for name in ("agent.yml", "integrations.yml", "pyproject.toml", "uv.lock", "rime_channel.py"):
         (destination / name).write_bytes((HERE / name).read_bytes())
     return destination
 
@@ -35,7 +35,8 @@ def main():
     from silverlake_demo.launcher import main as launch
     with tempfile.TemporaryDirectory(prefix="silverlake-rime-source-") as directory:
         project = prepare(directory)
-        return launch(project, required_secrets=("RASA_LICENSE", "OPENAI_API_KEY", "RIME_API_KEY"))
+        return launch(project, required_secrets=("RASA_LICENSE", "OPENAI_API_KEY", "RIME_API_KEY"),
+                      inspector_key="rime_channel.RimeOnlyInspector")
 
 
 if __name__ == "__main__":
