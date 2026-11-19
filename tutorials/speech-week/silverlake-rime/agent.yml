@@ -10,3 +10,5 @@ agent:
 name: Jack Henry SilverLake banking demo
 description: Read permitted fictional accounts and review an own-account transfer
 tool_timeout: 15
+orchestrator:
+  model_group: orchestrator
