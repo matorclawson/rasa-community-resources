@@ -141,6 +141,10 @@ class Intake:
 
 def server(intake, *, port=8080):
     class Handler(BaseHTTPRequestHandler):
+        def setup(self):
+            self.request.settimeout(5)
+            super().setup()
+
         def log_message(self, *args):
             pass
 
@@ -166,10 +170,12 @@ def server(intake, *, port=8080):
             except Exception:
                 status = 400
             self.send_response(status)
-            self.send_header("Content-Type", "application/xml")
+            self.send_header("Content-Type", "text/plain")
             self.send_header("Cache-Control", "no-store")
             self.send_header("Connection", "close")
-            response = b"<Response/>" if status == 200 else b""
+            # The new trial does not support TwiML responses. Acknowledge only;
+            # any approved reply is a separate, explicitly authorized API call.
+            response = b""
             self.send_header("Content-Length", str(len(response)))
             self.end_headers()
             self.wfile.write(response)

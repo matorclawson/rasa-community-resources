@@ -1,0 +1,11 @@
+[project]
+name = "shop-whatsapp-receiver"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "pydantic==2.13.5",
+  "zeocore @ git+https://github.com/matorclawson/zeocore.git@41cc059f4f5f4639b21122d461b92998ece206e2",
+]
+
+[tool.uv]
+package = false
