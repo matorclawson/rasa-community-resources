@@ -132,7 +132,8 @@ class Assistant:
         try:
             async with asyncio.timeout(45):
                 await self.agent.handle_message(UserMessage(message.text, output_channel=CollectingOutputChannel(),
-                    sender_id="shop-operator", input_channel="telegram", message_id=str(message.update_id)))
+                    sender_id="shop-operator", input_channel=getattr(message, "channel", "telegram"),
+                    message_id=getattr(message, "event_id", None) or str(message.update_id)))
             if view.quote is not None:
                 return view.quote
             if view.order is not None:
