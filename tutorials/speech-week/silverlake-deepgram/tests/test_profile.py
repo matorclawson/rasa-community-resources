@@ -35,8 +35,8 @@ class ProfileTests(unittest.TestCase):
             channels = resolve_voice_channel_speech(parse_channels(config["channels"]), model_groups=config["model_groups"])
         data = channels["inspector"]
         self.assertNotIn("speech_model", data)
-        self.assertEqual(data["asr"]["name"], "deepgram")
-        self.assertEqual(data["tts"]["name"], "deepgram")
+        self.assertEqual(data["asr"]["provider"], "deepgram")
+        self.assertEqual(data["tts"]["provider"], "deepgram")
         InspectorInputChannel.from_credentials(data)
 
     def test_native_agent_spec_uses_required_rc1_orchestrator(self):
