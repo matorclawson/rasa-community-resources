@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import re
 
 from zeo_core.integrations.twilio_whatsapp import ChannelInbound, ChannelReceipt, SendWhatsAppRequest
@@ -12,12 +11,15 @@ from .whatsapp_webhook import IntakeHeld, Journal
 
 
 class Conversation:
-    def __init__(self, path, *, customer, sender, public_base, channel, assistant, orders, clock):
+    def __init__(self, path, *, customer, sender, public_base, channel, assistant, orders, clock,
+                 minimum_send_interval=3):
         self.journal = Journal(path)
         self.db = self.journal.db
         self.customer, self.sender = customer, sender
         self.public_base, self.channel = public_base.rstrip("/"), channel
         self.assistant, self.orders, self.clock = assistant, orders, clock
+        self.minimum_send_interval = minimum_send_interval
+        self.last_send_attempt = None
         self.db.executescript("""
             CREATE TABLE IF NOT EXISTS wa_outgoing (
                 key TEXT PRIMARY KEY, recipient TEXT NOT NULL, body TEXT NOT NULL, receipt TEXT
@@ -40,6 +42,8 @@ class Conversation:
             raise IntakeHeld("INSPECT_ORIGINAL_SEND")
 
     async def send(self, key, text):
+        if self.db.execute("SELECT 1 FROM wa_inbox WHERE phase='held'").fetchone():
+            raise IntakeHeld("INSPECT_CHANGED_ORIGINAL_EVENT")
         if not isinstance(text, str) or not 0 < len(text) <= 1600:
             raise IntakeHeld("REPLY_EXCEEDS_CHANNEL_LIMIT")
         old = self.db.execute("SELECT recipient,body,receipt FROM wa_outgoing WHERE key=?", (key,)).fetchone()
@@ -51,6 +55,10 @@ class Conversation:
         request = SendWhatsAppRequest(to=self.customer, from_number=self.sender, body=text,
                                      status_callback=self.public_base + "/twilio/status")
         try:
+            loop = asyncio.get_running_loop()
+            if self.last_send_attempt is not None:
+                await asyncio.sleep(max(0, self.minimum_send_interval - (loop.time() - self.last_send_attempt)))
+            self.last_send_attempt = loop.time()
             receipt = await asyncio.to_thread(self.channel.send, request)
             if (receipt.to != self.customer
                     or not re.fullmatch(r"SM[0-9a-fA-F]{32}", receipt.provider_message_id)
@@ -91,6 +99,8 @@ class Conversation:
                     await self.send(key, "That confirmation is not bound to an active review. Ask for a new basket, then use WhatsApp Reply on its review.")
                 else:
                     request_key = "whatsapp:" + event_id
+                    if self.db.execute("SELECT phase FROM wa_inbox WHERE event_id=?", (event_id,)).fetchone() != ("working",):
+                        raise IntakeHeld("ORIGINAL_EVENT_CHANGED_DURING_TURN")
                     order = await self.orders.place(quote.reference, request_key)
                     if (not isinstance(order, Order) or order.quote != quote or order.request_key != request_key):
                         raise IntakeHeld("ORIGINAL_ORDER_RESPONSE_CHANGED")
@@ -113,7 +123,9 @@ class Conversation:
                     self.db.execute("INSERT INTO wa_review VALUES(1,?,?)", (result.model_dump_json(), sent.model_dump_json()))
                 else:
                     await self.send(key, result)
-            self.db.execute("UPDATE wa_inbox SET phase='done' WHERE event_id=?", (event_id,))
+            finished = self.db.execute("UPDATE wa_inbox SET phase='done' WHERE event_id=? AND phase='working'", (event_id,))
+            if finished.rowcount != 1:
+                raise IntakeHeld("ORIGINAL_EVENT_CHANGED_DURING_TURN")
             return True
         except BaseException:
             self.db.execute("UPDATE wa_inbox SET phase='held' WHERE event_id=?", (event_id,))

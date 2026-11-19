@@ -46,7 +46,8 @@ class Boundaries(unittest.IsolatedAsyncioTestCase):
         self.conversation = Conversation(Path(self.directory.name) / "private" / "inbox.sqlite3",
             customer="+15555550101", sender="+14155238886", public_base="https://offline.app.github.dev",
             channel=self.channel, assistant=SimpleNamespace(respond=respond),
-            orders=SimpleNamespace(place=place, lookup=lookup), clock=lambda: self.now)
+            orders=SimpleNamespace(place=place, lookup=lookup), clock=lambda: self.now,
+            minimum_send_interval=0)
         self.counter = 10
 
     async def asyncTearDown(self):
@@ -121,6 +122,21 @@ class Boundaries(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(IntakeHeld):
             await self.conversation.send("large", "x" * 1601)
         self.assertEqual(self.channel.requests, [])
+
+    async def test_changed_duplicate_during_model_turn_stays_held(self):
+        event = self.retain("two notebooks")
+        async def respond(message, latest):
+            # A concurrent signed HTTP retry changes the original while the
+            # asynchronous model turn is open. Its 409 must survive completion.
+            with self.assertRaises(IntakeHeld):
+                self.conversation.journal.retain(event, {"MessageSid": event.event_id, "Body": "changed"})
+            return self.quote
+        self.conversation.assistant = SimpleNamespace(respond=respond)
+        with self.assertRaises(IntakeHeld):
+            await self.conversation.handle_next()
+        self.assertEqual(self.channel.requests, [])
+        self.assertEqual(self.placements, [])
+        self.assertEqual(self.conversation.db.execute("SELECT phase FROM wa_inbox").fetchone()[0], "held")
 
     async def test_shipping_is_one_same_recipient_attempt_not_delivery_claim(self):
         review = await self.review()
