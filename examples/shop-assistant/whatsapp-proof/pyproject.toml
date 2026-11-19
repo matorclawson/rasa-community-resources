@@ -1,0 +1,10 @@
+[project]
+name = "shop-whatsapp-intake-proof"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "zeocore @ git+https://github.com/matorclawson/zeocore.git@48e68f5439706c0ce62dea4730692f3fef19bc34",
+]
+
+[tool.uv]
+package = false
