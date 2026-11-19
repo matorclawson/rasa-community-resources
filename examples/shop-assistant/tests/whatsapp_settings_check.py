@@ -15,7 +15,7 @@ class ConfigurationTests(unittest.TestCase):
         settings = Settings.environment(self.values)
         self.assertEqual(settings.auth_token.get_secret_value(), "offline-account-token")
         self.assertEqual(settings.customer, "+15555550101")
-        self.assertEqual(settings.sender, "+14155238886")
+        self.assertEqual(settings.sender, "+447723317807")
         self.assertEqual(settings.public_base, "https://offline-venue-8080.app.github.dev")
 
     def test_api_key_sid_refused_without_disclosing_it(self):

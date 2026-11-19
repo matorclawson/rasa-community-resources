@@ -35,8 +35,9 @@ class Settings:
         # back to the historical API-key-secret name for signature validation.
         instance.auth_token = SecretStr(values["TWILIO_AUTH_TOKEN"])
         instance.customer = values["SHOP_WHATSAPP_CUSTOMER"]
-        # Public shared sender documented at https://www.twilio.com/docs/whatsapp/sandbox
-        instance.sender = "+14155238886"
+        # Public new-trial sender confirmed by the operator through Architect
+        # msg-architect-arch-whatsapp-trial-flow-20261119. No customer discovery.
+        instance.sender = "+447723317807"
         instance.port = 8080
         instance.public_base = "https://" + values["CODESPACE_NAME"] + "-8080.app.github.dev"
         instance.state_directory = Path(values.get("SHOP_WHATSAPP_STATE_DIR", ".state-whatsapp")).absolute()
