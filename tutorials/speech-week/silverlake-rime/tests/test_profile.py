@@ -30,14 +30,14 @@ class ProfileTests(unittest.TestCase):
         import yaml
         from rasa.core.channels.voice_stream.speech_model.factory import speech_model_from_config
         from rasa.core.channels.voice_stream.audio_bytes import L16_16KHZ
-        from rasa.core.channels.voice_stream.speech_model.rime_prism import RimePrismSpeechModel
+        from rasa.core.channels.voice_stream.speech_model.rime_prism import RimePrismEngine
         config = yaml.safe_load((HERE / "integrations.yml").read_text())
         channel = config["channels"]["inspector"]
         self.assertNotIn("asr", channel)
         self.assertNotIn("tts", channel)
         with patch.dict("os.environ", {"RIME_API_KEY": "offline-placeholder"}):
             engine = speech_model_from_config(channel["speech_model"], L16_16KHZ)
-        self.assertIsInstance(engine, RimePrismSpeechModel)
+        self.assertIsInstance(engine, RimePrismEngine)
 
     def test_exact_runtime_and_source_lock(self):
         import importlib.metadata
