@@ -21,7 +21,7 @@ class ProfileTests(unittest.TestCase):
     def test_temporary_project_preserves_existing_bank_sources(self):
         with tempfile.TemporaryDirectory() as directory:
             target = profile.prepare(directory)
-            for relative in ("agent.yml", "hooks.py", "skills/banking/skill.md", "skills/banking/tools.py"):
+            for relative in ("hooks.py", "skills/banking/skill.md", "skills/banking/tools.py"):
                 self.assertEqual((target / relative).read_bytes(), (profile.BANK / relative).read_bytes())
             self.assertFalse((target / ".env").exists())
             self.assertFalse((target / ".venv").exists())
@@ -38,6 +38,14 @@ class ProfileTests(unittest.TestCase):
         with patch.dict("os.environ", {"RIME_API_KEY": "offline-placeholder"}):
             engine = speech_model_from_config(channel["speech_model"], L16_16KHZ)
         self.assertIsInstance(engine, RimePrismEngine)
+
+    def test_native_agent_spec_uses_required_rc1_orchestrator(self):
+        import yaml
+        from rasa.mantle.config.agent_spec import agent_spec_from_config
+        config = yaml.safe_load((HERE / "agent.yml").read_text())
+        spec = agent_spec_from_config(config)
+        self.assertEqual(spec.orchestrator.model_group, "orchestrator")
+        self.assertNotIn("llm", config)
 
     def test_exact_runtime_and_source_lock(self):
         import importlib.metadata

@@ -3,7 +3,8 @@
 Work in progress. No completed voice run or recording is claimed yet.
 
 This profile reuses the repository's SilverLake teaching host and banking skill.
-It changes the speech interface to native Rime Prism on exactly Rasa Pro 3.22.0rc1.
+Its agent configuration replaces the old `llm.model_group` with the required
+rc1 `orchestrator.model_group`. It changes the speech interface to native Rime Prism on exactly Rasa Pro 3.22.0rc1.
 Rime is the only speech vendor. The Rasa orchestrator uses OpenAI for tool planning;
 that is a model dependency, not a second speech provider.
 

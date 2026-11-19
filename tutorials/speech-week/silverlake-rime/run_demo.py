@@ -16,11 +16,11 @@ BANK = HERE.parents[2] / "examples" / "jack-henry-silverlake"
 def prepare(destination):
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=True)
-    for relative in ("agent.yml", "hooks.py", "skills/banking/skill.md", "skills/banking/tools.py"):
+    for relative in ("hooks.py", "skills/banking/skill.md", "skills/banking/tools.py"):
         target = destination / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes((BANK / relative).read_bytes())
-    for name in ("integrations.yml", "pyproject.toml", "uv.lock"):
+    for name in ("agent.yml", "integrations.yml", "pyproject.toml", "uv.lock"):
         (destination / name).write_bytes((HERE / name).read_bytes())
     return destination
 

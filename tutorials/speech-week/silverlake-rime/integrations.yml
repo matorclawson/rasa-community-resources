@@ -4,7 +4,6 @@ model_groups:
       - provider: openai
         model: gpt-5.2
         api_key: ${OPENAI_API_KEY}
-        temperature: 0
 channels:
   rest:
     enabled: true
