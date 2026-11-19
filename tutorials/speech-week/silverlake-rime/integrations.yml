@@ -1,0 +1,21 @@
+model_groups:
+  - id: orchestrator
+    models:
+      - provider: openai
+        model: gpt-5.2
+        api_key: ${OPENAI_API_KEY}
+        temperature: 0
+channels:
+  rest:
+    enabled: true
+  inspector:
+    enabled: true
+    sample_rate: 16000
+    speech_model:
+      name: rime_prism
+      voice: aurora
+      instructions: >-
+        You are the speech interface for a fictional banking teaching exercise.
+        Delegate every banking request, verification phrase and transfer confirmation
+        to the Rasa agent. Never answer from memory or confirm a transfer yourself.
+        Speak the host-provided reply once, without adding a success claim.
