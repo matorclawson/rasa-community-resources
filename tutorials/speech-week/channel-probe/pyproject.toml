@@ -1,0 +1,8 @@
+[project]
+name = "speech-week-native-channel-probe"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = ["rasa-pro==3.22.0rc1", "twilio>=9.13.0,<9.14.0"]
+[tool.uv]
+package = false
+prerelease = "allow"
