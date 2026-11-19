@@ -1,0 +1,32 @@
+llm:
+  model_group: dialogue
+model_groups:
+  - id: dialogue
+    models:
+      - provider: openai
+        model: gpt-5.2
+        api_key: ${OPENAI_API_KEY}
+  - id: speechmatics_input
+    models:
+      - provider: speechmatics
+        api_key: ${SPEECHMATICS_API_KEY}
+        region: eu
+        language_map:
+          en:
+            language: en
+            model: linden-1
+  - id: rime_output
+    models:
+      - provider: rime
+        api_key: ${RIME_API_KEY}
+        model_id: coda
+        language_map:
+          en:
+            language: en
+            voice: astra
+channels:
+  inspector:
+    enabled: true
+    sample_rate: 16000
+    asr: speechmatics_input
+    tts: rime_output

@@ -1,0 +1,19 @@
+llm:
+  model_group: dialogue
+model_groups:
+  - id: dialogue
+    models:
+      - provider: openai
+        model: gpt-5.2
+        api_key: ${OPENAI_API_KEY}
+channels:
+  inspector:
+    enabled: true
+    sample_rate: 16000
+    speech_model:
+      name: rime_prism
+      voice: aurora
+      instructions: >-
+        You are the voice of the fictional Juniper Library.
+        Delegate opening-hour questions to Rasa instead of inventing hours.
+        Use the supplied result and answer in one short sentence.
