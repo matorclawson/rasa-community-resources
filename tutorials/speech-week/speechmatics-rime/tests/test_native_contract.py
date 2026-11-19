@@ -1,5 +1,8 @@
 """Actual rc1 model-group mapper checks; no SDK network or credentials."""
 import unittest
+import os
+# Use the dependency-bundled pricing map; do not fetch one during config checks.
+os.environ["LITELLM_LOCAL_MODEL_COST_MAP"] = "True"
 from pathlib import Path
 from rasa.mantle.config.channels import load_integration_speech_inputs
 from rasa.mantle.config.speech_model_group import resolve_speech_model_group
@@ -28,9 +31,10 @@ class SpeechmaticsContract(unittest.TestCase):
     def test_old_realtime_adapter_tuning_is_not_a_native_agent_stt_config(self):
         for key, value in {"operating_point": "enhanced", "max_delay": 1.0,
                            "end_of_utterance_silence_trigger": 0.7}.items():
-            with self.subTest(key=key), self.assertRaises(InvalidConfigException) as error:
-                resolve_speech_model_group("input", groups(**{key: value}), slot="asr")
-            self.assertIn(key, str(error.exception))
+            with self.subTest(key=key):
+                with self.assertRaises(InvalidConfigException) as error:
+                    resolve_speech_model_group("input", groups(**{key: value}), slot="asr")
+                self.assertIn(key, str(error.exception))
 
     def test_language_is_explicit_even_when_model_is_named(self):
         data = groups(); del data[0]["models"][0]["language_map"]["en"]["language"]
