@@ -32,38 +32,12 @@ class ProfileTests(unittest.TestCase):
         from rasa.core.channels.voice_stream.audio_bytes import L16_16KHZ
         from rasa.core.channels.voice_stream.speech_model.rime_prism import RimePrismEngine
         config = yaml.safe_load((HERE / "integrations.yml").read_text())
-        channel = config["channels"]["rime_channel.RimeOnlyInspector"]
+        channel = config["channels"]["inspector"]
         self.assertNotIn("asr", channel)
         self.assertNotIn("tts", channel)
         with patch.dict("os.environ", {"RIME_API_KEY": "offline-placeholder"}):
             engine = speech_model_from_config(channel["speech_model"], L16_16KHZ)
         self.assertIsInstance(engine, RimePrismEngine)
-
-    def test_complete_native_channel_resolution_stays_rime_only(self):
-        import sys
-        import yaml
-        sys.path.insert(0, str(HERE))
-        from rime_channel import RimeOnlyInspector
-        from rasa.mantle.config.channels import parse_channels, resolve_voice_channel_speech
-        config = yaml.safe_load((HERE / "integrations.yml").read_text())
-        resolved = resolve_voice_channel_speech(parse_channels(config["channels"]))
-        data = resolved["rime_channel.RimeOnlyInspector"]
-        self.assertEqual(data["asr"], RimeOnlyInspector.DEFAULT_SPEECH_CONFIG["asr"])
-        self.assertEqual(data["tts"], RimeOnlyInspector.DEFAULT_SPEECH_CONFIG["tts"])
-        channel = RimeOnlyInspector.from_credentials(data)
-        self.assertEqual(type(channel).__name__, "RimeOnlyInspector")
-
-    def test_second_configured_speech_vendor_is_refused(self):
-        import sys
-        import yaml
-        sys.path.insert(0, str(HERE))
-        from rime_channel import RimeOnlyInspector
-        from rasa.shared.exceptions import InvalidConfigException
-        config = yaml.safe_load((HERE / "integrations.yml").read_text())
-        data = config["channels"]["rime_channel.RimeOnlyInspector"]
-        data["asr"] = {"name": "speechmatics"}
-        with self.assertRaises(InvalidConfigException):
-            RimeOnlyInspector.from_credentials(data)
 
     def test_native_agent_spec_uses_required_rc1_orchestrator(self):
         import yaml

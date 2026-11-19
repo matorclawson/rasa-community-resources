@@ -60,7 +60,7 @@ def stopped_by_the_caller():
     return _interrupted
 
 
-def main(project, *, required_secrets=SECRETS, inspector_key="inspector"):
+def main(project, *, required_secrets=SECRETS):
     parser = argparse.ArgumentParser(description="Start the fictional SilverLake banking example.")
     parser.add_argument("--port", type=int, default=5005)
     parser.add_argument("--fault", choices=["none", "transfer-response-lost"], default="none",
@@ -167,7 +167,7 @@ def main(project, *, required_secrets=SECRETS, inspector_key="inspector"):
             if result.code:
                 raise RuntimeError("agent_validation_failed")
             integrations = read_yaml_file(project / "integrations.yml", expand_env_vars=False)
-            integrations["channels"][inspector_key]["server_url"] = origin
+            integrations["channels"]["inspector"]["server_url"] = origin
             if not args.text_api:
                 # The REST text channel is a developer check only; keep it off otherwise.
                 integrations["channels"].pop("rest", None)
